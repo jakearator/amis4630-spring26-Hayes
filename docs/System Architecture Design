@@ -1,0 +1,45 @@
+┌──────────────────────────────────────────────────────────────────────────────┐ 
+│                              AZURE CLOUD PLATFORM                             │
+│                                                                               │
+│  ┌────────────────────────────────────────────────────────────────────────┐   │
+│  │                                 USERS                                  │   │
+│  │  Ethan (Mobile) | Karen (Laptop) | Brian (Desktop) | Maya | Jason      │   │
+│  └────────────────────────────────────────────────────────────────────────┘   │
+│                                  ↓ HTTPS                                      │
+│  ┌────────────────────────────────────────────────────────────────────────┐   │
+│  │                    FRONTEND LAYER (React Web App)                       │  │
+│  │  • Product Catalog UI (categories, product pages, licensing indicator)  │  │
+│  │  • Search UI (basic) + Filters (basic)                                  │  │
+│  │  • Shopping Cart UI                                                     │  │
+│  │  • Checkout UI + Confirmation screens                                   │  │
+│  │  • Account UI (login, order history/tracking)                           │  │
+│  │  • Admin Dashboard UI (basic)                                           │  │
+│  └────────────────────────────────────────────────────────────────────────┘   │
+│                                  ↓ HTTPS (REST API)                           │
+│  ┌────────────────────────────────────────────────────────────────────────┐   │
+│  │                 BACKEND LAYER (ASP.NET Core Web API)                    │  │
+│  │  • Authentication + Role Recognition (Student/Faculty/Alumni)           │  │
+│  │  • Pricing / Discount Rules (auto student & faculty discounts)          │  │
+│  │  • Product Service (catalog, details, search)                           │  │
+│  │  • Cart + Order Service (create order, confirmation, status updates)    │  │
+│  │  • Admin Service (product + inventory management)                       │  │
+│  └────────────────────────────────────────────────────────────────────────┘   │
+│                     ↓ SQL Queries                          ↘ API Calls        │
+│  ┌───────────────────────────────────────────────┐         ┌──────────────┐   │
+│  │             DATA LAYER (Azure SQL)            │         │ INTEGRATIONS │   │
+│  │  • Users + Roles                              │         │ • Payments   │   │
+│  │  • Products + Inventory                       │         │   (Stripe/   │   │
+│  │  • Carts                                      │         │    PayPal)   │   │
+│  │  • Orders + OrderItems                        │         │ • Shipping/  │   │
+│  │  • Reviews (future milestone, optional)       │         │   Tracking   │   │
+│  └───────────────────────────────────────────────┘         └──────────────┘   │
+│                                                                               │
+│  ┌────────────────────────────────────────────────────────────────────────┐   │
+│  │                   HOSTING + CI/CD (GitHub → Azure)                     │   │
+│  │  GitHub Repository + GitHub Actions (CI/CD)                            │   │
+│  │   • Build/Deploy React → Azure Static Web Apps (or App Service)        │   │
+│  │   • Build/Deploy .NET API → Azure App Service                          │   │
+│  │   • Azure SQL Database (managed)                                       │   │  
+│  └────────────────────────────────────────────────────────────────────────┘   │
+└──────────────────────────────────────────────────────────────────────────────┘
+
