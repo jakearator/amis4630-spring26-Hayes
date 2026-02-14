@@ -1,1 +1,32 @@
+Status: 
 
+ACCEPTED
+
+Context: 
+
+Buckeye Marketplace requires a web-based system that supports product browsing, shopping cart functionality, role-based login, discounts, and order processing. 
+The system must separate user interface logic from backend business logic and integrate with Azure hosting.
+
+Decision: 
+
+We will use React for the frontend and ASP.NET Core Web API (.NET) for the backend.
+React will handle the user interface, while the .NET API will manage authentication, role-based discounts, business logic, and database communication through RESTful APIs.
+
+Consequences:
+
+Positive: 
+
+- Clear separation between frontend and backend
+
+- Secure backend enforcement of role-based discounts
+
+- Strong compatibility with Azure hosting
+
+Negatives:
+
+- Requires managing and integrating two separate applications
+
+AI Tool Usage:
+LLM USED: CHATGPT
+
+- ChatGPT was used to help validate the appropriateness of the selected technology stack for the system’s requirements.
