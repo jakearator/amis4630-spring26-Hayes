@@ -1,0 +1,40 @@
+Status:
+
+Accepted
+
+Context:
+
+The project requires a reliable way to build and deploy both the frontend and backend applications to Azure. Manual deployments increase the risk of errors and inconsistencies between environments.
+
+Decisions:
+
+We will use GitHub Actions to implement a CI/CD pipeline.
+
+- Code pushed to the GitHub repository will trigger automated builds.
+
+- The React frontend and .NET backend will be automatically deployed to Azure hosting services.
+
+Consequences:
+
+Positive:
+
+- Automated and consistent deployments
+
+- Reduced manual deployment errors
+
+- Integrated workflow within GitHub
+
+Negative:
+
+- Requires initial pipeline configuration
+
+- Requires secure management of Azure credentials
+
+AI Tool Usage:
+LLM USED: CHATGPT
+
+- CHATGPT was used in helping me find the positive and negatives of github (specifically cons). 
+ 
+- Also helped me find a good layout for this via github repo:
+
+https://github.com/joelparkerhenderson/architecture-decision-record/tree/main/locales/en/templates/decision-record-template-by-michael-nygard
