@@ -1,0 +1,46 @@
+Status:
+
+Accepted
+
+Context:
+
+The system requires structured data storage to support users, roles, products, carts, orders, and order tracking. 
+
+The data contains clear relationships (one-to-many and many-to-many), particularly between users and roles, and orders and order items.
+
+Decision:
+
+We will use Azure SQL Database, a relational database management system, to store application data.
+
+The schema will support entity relationships including:
+
+- User <--> Role (many-to-many via UserRole)
+
+- User --> Order (one-to-many)
+
+- Order --> OrderItem (one-to-many)
+
+- Product --> OrderItem (one-to-many)
+
+Consequences:
+
+Positive:
+
+- Strong support for relational data and structured queries
+
+- Aligns with the ERD design
+
+- Integrates well with .NET and Azure
+
+Negative:
+
+- Requires schema design and management
+
+- Less flexible for unstructured data compared to NoSQL alternatives
+
+AI Tool Usage:
+LLM USED: CHATGPT
+
+- ChatGPT was used to help validate high-level entity relationships. Also was used to find tempalte format to follow for ADRs, link to github repo below:
+
+https://github.com/joelparkerhenderson/architecture-decision-record/tree/main/locales/en/templates/decision-record-template-by-michael-nygard
