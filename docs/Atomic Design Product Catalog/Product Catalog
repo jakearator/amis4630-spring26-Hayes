@@ -1,1 +1,146 @@
+Atoms:
 
+- Button
+- Input
+- Icon
+- Badge (example: “Officially Licensed”)
+- Text (Title, Body, Price)
+- Image
+- Spinner / LoadingIndicator
+- Divider
+- Tag / Chip (Category, Size, etc.)
+
+Molecules:
+
+- SearchBar (Input + Button/Icon)
+- FilterDropdown (Label + Select)
+- FilterChipsRow (Tag/Chip list + clear button)
+- PriceDisplay (Price text + optional discount badge)
+- RatingPreview (stars + count -- used as placeholder)
+- ProductThumbnail (Image + Badge overlay)
+
+Organisms:
+
+- CatalogHeader
+  - SearchBar
+  - FilterDropdown(s)
+  - FilterChipsRow
+
+- ProductCard
+  - ProductThumbnail
+  - Text (name)
+  - PriceDisplay
+  - Badge (Officially Licensed)
+  - Button (“View Details” / “Add to Cart” if you include it here)
+
+- PaginationControls (or InfiniteScrollLoader if you prefer)
+- CategorySidebar (optional if you want categories on the left)
+- EmptyState (no results found)
+- ErrorState (API error message)
+- LoadingState (spinner + skeletons)
+
+Templates:
+
+- CatalogPageTemplate
+  - CatalogHeader (search + filters)
+  - CategorySidebar (optional)
+  - ProductGrid
+  - PaginationControls
+  - Loading/Error/Empty states
+
+--------------------------------------------------------------------------------------
+
+Atomic Design Hierarchy view of "Product Catalog":
+
+TEMPLATE
+└─ CatalogPageTemplate
+   ├─ CatalogHeader (Organism)
+   ├─ CategorySidebar (Organism - optional)
+   ├─ ProductGrid (Organism)
+   ├─ PaginationControls (Organism)
+   ├─ LoadingState (Organism)
+   ├─ EmptyState (Organism)
+   └─ ErrorState (Organism)
+
+ORGANISMS
+├─ CatalogHeader
+│  ├─ SearchBar (Molecule)
+│  ├─ FilterDropdown(s) (Molecule)
+│  └─ FilterChipsRow (Molecule)
+│
+├─ ProductGrid
+│  └─ ProductCard (Molecule)
+│
+├─ ProductCard
+│  ├─ ProductThumbnail (Molecule)
+│  ├─ Text (Atom)
+│  ├─ PriceDisplay (Molecule)
+│  ├─ Badge (Atom)
+│  └─ Button (Atom)
+│
+├─ PaginationControls
+│  └─ Button (Atom)
+│
+├─ CategorySidebar
+│  ├─ Text (Atom)
+│  └─ Tag/Chip (Atom)
+│
+├─ LoadingState
+│  └─ Spinner / LoadingIndicator (Atom)
+│
+├─ EmptyState
+│  ├─ Text (Atom)
+│  └─ Icon (Atom)
+│
+└─ ErrorState
+   ├─ Text (Atom)
+   ├─ Icon (Atom)
+   └─ Button (Atom)
+
+MOLECULES
+├─ SearchBar
+│  ├─ Input (Atom)
+│  ├─ Button (Atom)
+│  └─ Icon (Atom)
+│
+├─ FilterDropdown
+│  ├─ Text (Atom)
+│  └─ Input (Atom)
+│
+├─ FilterChipsRow
+│  ├─ Tag/Chip (Atom)
+│  └─ Button (Atom)
+│
+├─ PriceDisplay
+│  ├─ Text (Atom)
+│  └─ Badge (Atom)
+│
+├─ RatingPreview
+│  ├─ Icon (Atom)
+│  └─ Text (Atom)
+│
+└─ ProductThumbnail
+   ├─ Image (Atom)
+   └─ Badge (Atom)
+
+ATOMS
+- Button
+- Input
+- Icon
+- Badge
+- Text
+- Image
+- Spinner / LoadingIndicator
+- Divider
+- Tag / Chip
+
+
+LLM USED FOR ASSISTANCE OF CREATING ATOMIC DESIGN PRODUCT CATALOG: CHATGPT
+
+PROMPT EXAMPLES:
+
+- "Give me an general example of an atom, molecule organism, and template without using my context / repo"
+
+- "Apply examples + extra to some steps to add detail"
+
+- "Generate a hierarchy view of my current product catalog"
