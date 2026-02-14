@@ -44,3 +44,11 @@
 └──────────────────────────────────────────────────────────────────────────────┘
 
 LLM USED: ChatGPT — Used for assistance with organizing system components and interaction flow. The diagram layout was modeled after the professor’s provided example (FROM IBM GitHub), and ALL FINAL DESIGN CHOICES WERE MADE BY ME.
+
+SOME EXAMPLES OF SOME PROMPTS I USED TO GET ASSISTANCE FROM LLM:
+
+- "For this system architecture diagram, is the standard build work from starting from the top and going down?"
+
+- "Does Hosting + CI/CD require an arrow pointing to them even though they're the final product of the system/database?"
+
+- "How many features do we involve on the frontend layer? Is it only the key MVP ones?"
