@@ -41,3 +41,6 @@ Note:
 
 - The admin dashboard is supported by the existing Product and Order entities, and admin permissions are supported through User/Role relationships.
 - Cloud deployment is addressed in the system architecture (Azure hosting + GitHub Actions), not the ERD, since it does not require data entities.
+
+
+LLM USED: ChatGPT — Used for assistance with feature prioritization and understanding how high-level ERD relationships should connect (e.g., one-to-many vs many-to-many). FINAL DECISIONS AND CONTENT WERE CREATED AND REVIEWED BY ME.
