@@ -41,6 +41,6 @@ Negative:
 AI Tool Usage:
 LLM USED: CHATGPT
 
-- ChatGPT was used to help validate high-level entity relationships. Also was used to find tempalte format to follow for ADRs, link to github repo below:
+- ChatGPT was used to help validate high-level entity relationship and also helped in assisting me in the pros and con section. Also was used to find tempalte format to follow for ADRs, link to github repo below:
 
 https://github.com/joelparkerhenderson/architecture-decision-record/tree/main/locales/en/templates/decision-record-template-by-michael-nygard
