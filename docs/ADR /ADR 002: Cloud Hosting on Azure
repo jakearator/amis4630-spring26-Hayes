@@ -1,0 +1,41 @@
+Status:
+
+Accepted
+
+Context:
+
+The system must be deployed to the cloud to meet milestone requirements and ensure public accessibility. 
+The hosting platform must support both the React frontend and the .NET backend, as well as integrate with a relational database.
+
+Decision:
+
+We will deploy the application using Microsoft Azure.
+
+- React frontend will be hosted using Azure web hosting services.
+
+- .NET backend will be deployed to Azure App Service.
+
+- The database will be hosted on Azure SQL Database.
+
+Consequences:
+
+Positive:
+
+- Centralized cloud environment for frontend, backend, and database
+
+- Strong compatibility with .NET
+
+- Scalable and reliable hosting
+
+Negative:
+
+- Requires configuration of Azure services and environment settings
+
+- Introduces cloud service management responsibilities
+
+AI Tool Usage:
+LLM USED: CHATGPT
+
+- CHATGPT was used to locate a github repo that has a "correct format" for ADR's and assisting in the pros & cons of consequences.
+
+GITHUB REPO USED FOR FORMAT: https://github.com/joelparkerhenderson/architecture-decision-record/tree/main/locales/en/templates/decision-record-template-by-michael-nygard 
