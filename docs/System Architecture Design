@@ -43,3 +43,4 @@
 │  └────────────────────────────────────────────────────────────────────────┘   │
 └──────────────────────────────────────────────────────────────────────────────┘
 
+LLM USED: ChatGPT — Used for assistance with organizing system components and interaction flow. The diagram layout was modeled after the professor’s provided example (FROM IBM GitHub), and ALL FINAL DESIGN CHOICES WERE MADE BY ME.
