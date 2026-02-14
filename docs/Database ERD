@@ -44,3 +44,11 @@ Note:
 
 
 LLM USED: ChatGPT — Used for assistance with feature prioritization and understanding how high-level ERD relationships should connect (e.g., one-to-many vs many-to-many). FINAL DECISIONS AND CONTENT WERE CREATED AND REVIEWED BY ME.
+
+SOME EXAMPLES OF PROMPTS USED TO GENERATE INFORMATION / TALK TO LLM FOR ASSISTANCE:
+
+- "To my understanding.. we need a user, role, order, cart item, order item, discountrule, and orderstatus for our MVP. Do you think we need more entities for our current MVP / User story setup?"
+
+- "Given our current entity status, many of these relationships will be a 1:N. Will there be any different relationships involved in this ERD?"
+
+- "Double checking, a 1:N menans one record in table A can be related to MANY records in table B, but EACH record in table B can only relate to ONE record in Table A, correct?"
