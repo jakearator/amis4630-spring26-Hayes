@@ -29,4 +29,6 @@ Negatives:
 AI Tool Usage:
 LLM USED: CHATGPT
 
-- ChatGPT was used to help validate the appropriateness of the selected technology stack for the system’s requirements.
+- CHATGPT was used in assisting me find the pros and cons of consequences and the finding of a format for ADR's
+
+Link to Github repo that show me "normal format" for ADR's: https://github.com/joelparkerhenderson/architecture-decision-record/tree/main/locales/en/templates/decision-record-template-by-michael-nygard
