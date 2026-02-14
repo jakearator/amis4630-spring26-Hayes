@@ -1,0 +1,43 @@
+ERD: Main Entities (bare minimums needed for launch)
+
+- User
+- Role
+- UserRole (this would be a join table)
+- Product
+- Cart
+- CartItem
+- Order
+- OrderItem
+- DiscountRule
+- OrderStatusHistory 
+
+Relationship table (bare minimums needed for launch)
+
+- User 1:N Cart
+- Cart 1:N CartItem
+- Product 1:N CartItem
+- User 1:N Order
+- Order 1:N OrderItem
+- Product 1:N OrderItem
+- Order 1:N OrderStatusHistory
+- User N:M Role 
+  - (Subset): User 1:N UserRole
+  - (Subset): Role 1:N UserRole
+- Role 1:N DiscountRule
+
+How the schema supports my user stories:
+
+The ERD supports the core marketplace workflow of browsing products, adding items to a cart, and completing checkout. 
+
+The Product, Cart, CartItem, Order, and OrderItem entities allow users to complete purchases, supporting user stories such as “As a user, I want my checkout process to be quick and easy” (#7) and “As a user, I want to receive confirmation after placing an order” (#11).
+
+The OrderStatusHistory entity supports order tracking, aligning with “As a customer, I want to track my order status after purchase” (#8). 
+
+Role-based functionality is handled through User, Role, UserRole, and DiscountRule, which enables automatic discounts and supports “As an OSU student, I want student discounts applied automatically” (#1).
+
+Overall, the schema supports the prioritized launch features while remaining scalable for future enhancements.
+
+Note: 
+
+- The admin dashboard is supported by the existing Product and Order entities, and admin permissions are supported through User/Role relationships.
+- Cloud deployment is addressed in the system architecture (Azure hosting + GitHub Actions), not the ERD, since it does not require data entities.
