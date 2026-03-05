@@ -1,0 +1,54 @@
+# ADR-004: Database Selection (Azure SQL)
+
+**Status:**
+Accepted
+
+**Date:**
+2/13/2026
+
+---
+
+## Context
+
+The system requires structured data storage to support users, roles, products, carts, orders, and order tracking.
+
+The data contains clear relationships (one-to-many and many-to-many), particularly between users and roles, and orders and order items.
+
+---
+
+## Decision
+
+We will use **Azure SQL Database**, a relational database management system, to store application data.
+
+The schema will support entity relationships including:
+
+* **User ↔ Role** (many-to-many via UserRole)
+* **User → Order** (one-to-many)
+* **Order → OrderItem** (one-to-many)
+* **Product → OrderItem** (one-to-many)
+
+---
+
+## Consequences
+
+### Positive
+
+* Strong support for relational data and structured queries
+* Aligns with the ERD design
+* Integrates well with .NET and Azure
+
+### Negative
+
+* Requires schema design and management
+* Less flexible for unstructured data compared to NoSQL alternatives
+
+---
+
+## AI Tool Usage
+
+**LLM Used:** ChatGPT
+
+ChatGPT was used to help validate high-level entity relationships and assist in identifying the positives and negatives within the consequences section. It was also used to locate a template format commonly used for Architecture Decision Records.
+
+**Reference Template:**
+https://github.com/joelparkerhenderson/architecture-decision-record/tree/main/locales/en/templates/decision-record-template-by-michael-nygard
