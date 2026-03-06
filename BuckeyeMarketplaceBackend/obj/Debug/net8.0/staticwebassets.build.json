@@ -1,0 +1,11 @@
+{
+  "Version": 1,
+  "Hash": "wae/xpYBC/zsAGNAjE1AVxi5VhijLzg6NyLiaS1Bd/I=",
+  "Source": "BuckeyeMarketplaceBackend",
+  "BasePath": "_content/BuckeyeMarketplaceBackend",
+  "Mode": "Default",
+  "ManifestType": "Build",
+  "ReferencedProjectsConfiguration": [],
+  "DiscoveryPatterns": [],
+  "Assets": []
+}
