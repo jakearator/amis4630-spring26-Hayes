@@ -1,22 +1,23 @@
-import { useState, useEffect } from 'react';
+import { FC, useState, useEffect, CSSProperties } from 'react';
 import { useParams, Link } from 'react-router-dom';
+import { Product } from '../types';
 import { getProductById } from '../services/api';
 import Header from '../components/organisms/Header';
 import Image from '../components/atoms/Image';
 import Button from '../components/atoms/Button';
 
-export default function ProductDetailPage() {
-  const { id } = useParams();
-  const [product, setProduct] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [notFound, setNotFound] = useState(false);
-  const [error, setError] = useState(null);
+const ProductDetailPage: FC = () => {
+  const { id } = useParams<{ id: string }>();
+  const [product, setProduct] = useState<Product | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [notFound, setNotFound] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchProduct = async () => {
       try {
         setLoading(true);
-        const data = await getProductById(id);
+        const data = await getProductById(id as string | number);
         if (data === null) {
           setNotFound(true);
         } else {
@@ -25,7 +26,8 @@ export default function ProductDetailPage() {
         }
         setError(null);
       } catch (err) {
-        setError(err.message);
+        const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred';
+        setError(errorMessage);
       } finally {
         setLoading(false);
       }
@@ -34,7 +36,7 @@ export default function ProductDetailPage() {
     fetchProduct();
   }, [id]);
 
-  const styles = {
+  const styles: Record<string, CSSProperties> = {
     page: {
       minHeight: '100vh',
       backgroundColor: '#fafafa',
@@ -164,13 +166,6 @@ export default function ProductDetailPage() {
       border: '1px solid #fecaca',
       textAlign: 'center',
     },
-    responsiveContent: {
-      '@media (max-width: 768px)': {
-        display: 'grid',
-        gridTemplateColumns: '1fr',
-        gap: '32px',
-      },
-    },
   };
 
   if (loading) {
@@ -220,7 +215,7 @@ export default function ProductDetailPage() {
     );
   }
 
-  const formatDate = (dateString) => {
+  const formatDate = (dateString: string): string => {
     const date = new Date(dateString);
     return date.toLocaleDateString('en-US', {
       year: 'numeric',
@@ -242,29 +237,29 @@ export default function ProductDetailPage() {
         <div style={styles.content}>
           <div style={styles.imageContainer}>
             <Image
-              src={product.imageUrl}
-              alt={product.title}
+              src={product!.imageUrl}
+              alt={product!.title}
               width="100%"
               height="100%"
             />
           </div>
 
           <div style={styles.details}>
-            <span style={styles.category}>{product.category}</span>
-            <h1 style={styles.title}>{product.title}</h1>
+            <span style={styles.category}>{product!.category}</span>
+            <h1 style={styles.title}>{product!.title}</h1>
 
             <div style={styles.brand}>
-              Brand: <span style={styles.brandName}>{product.brand}</span>
+              Brand: <span style={styles.brandName}>{product!.brand}</span>
             </div>
-            <div style={styles.postedDate}>Added {formatDate(product.postedDate)}</div>
+            <div style={styles.postedDate}>Added {formatDate(product!.postedDate)}</div>
 
             <div style={styles.divider} />
 
-            <div style={styles.price}>${product.price.toFixed(2)}</div>
+            <div style={styles.price}>${(product!.price).toFixed(2)}</div>
 
             <div>
               <p style={styles.descriptionLabel}>Description</p>
-              <p style={styles.description}>{product.description}</p>
+              <p style={styles.description}>{product!.description}</p>
             </div>
 
             <div style={styles.buttonContainer}>
@@ -277,4 +272,6 @@ export default function ProductDetailPage() {
       </div>
     </div>
   );
-}
+};
+
+export default ProductDetailPage;

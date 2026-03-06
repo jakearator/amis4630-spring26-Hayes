@@ -1,7 +1,13 @@
+import { FC, CSSProperties } from 'react';
+import { Product } from '../../types';
 import ProductCard from '../molecules/ProductCard';
 
-export default function ProductGrid({ products }) {
-  const styles = {
+interface ProductGridProps {
+  products: Product[];
+}
+
+const ProductGrid: FC<ProductGridProps> = ({ products }) => {
+  const styles: Record<string, CSSProperties> = {
     gridContainer: {
       maxWidth: '1200px',
       margin: '0 auto',
@@ -12,17 +18,6 @@ export default function ProductGrid({ products }) {
       gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))',
       gap: '24px',
       padding: '40px 0',
-      '@media (max-width: 1024px)': {
-        gridTemplateColumns: 'repeat(3, 1fr)',
-      },
-      '@media (max-width: 768px)': {
-        gridTemplateColumns: 'repeat(2, 1fr)',
-        gap: '16px',
-      },
-      '@media (max-width: 480px)': {
-        gridTemplateColumns: '1fr',
-        gap: '16px',
-      },
     },
     empty: {
       textAlign: 'center',
@@ -55,4 +50,6 @@ export default function ProductGrid({ products }) {
       </div>
     </div>
   );
-}
+};
+
+export default ProductGrid;

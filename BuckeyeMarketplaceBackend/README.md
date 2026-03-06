@@ -61,13 +61,13 @@ Example URLs:
 ```json
 {
   "id": 1,
-  "title": "Calculus Textbook",
-  "description": "Introductory calculus textbook used in Math 1151.",
+  "title": "Calculus 1 Textbook (Math 1151)",
+  "description": "Used Calculus textbook in excellent condition. Covers limits, derivatives, and integrals.",
   "price": 89.99,
-  "category": "Books",
-  "sellerName": "Campus Bookstore",
+  "category": "Textbooks",
+  "brand": "Pearson",
   "postedDate": "2026-03-01T00:00:00",
-  "imageUrl": "https://via.placeholder.com/300?text=Calculus+Textbook"
+  "imageUrl": "https://images.unsplash.com/photo-1543002588-d83ceddf1f7f?w=800"
 }
 ```
 
@@ -98,6 +98,14 @@ The seeded products include:
 ```csharp
 private static List<Product> Products = new() { ... };
 ```
+
+### Frontend API Alignment (v2.1)
+The backend API is fully aligned with the TypeScript frontend:
+- ✅ All endpoints return properties matching the frontend `Product` interface
+- ✅ `brand` property properly exposed for product cards
+- ✅ `postedDate` in ISO 8601 format for JavaScript Date parsing
+- ✅ `imageUrl` for product images with fallback support
+- ✅ No extraneous properties that frontend doesn't use
 
 ### Product Model Extension
 **Decision**: Added `Brand` field to products for better marketplace context.

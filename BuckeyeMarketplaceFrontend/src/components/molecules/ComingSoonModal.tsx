@@ -1,7 +1,11 @@
-import { useEffect, useRef } from 'react';
+import { FC, useEffect, useRef, CSSProperties } from 'react';
 
-export default function ComingSoonModal({ onClose }) {
-  const closeButtonRef = useRef(null);
+interface ComingSoonModalProps {
+  onClose: () => void;
+}
+
+const ComingSoonModal: FC<ComingSoonModalProps> = ({ onClose }) => {
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
 
   // Focus the close button on mount for keyboard accessibility
   useEffect(() => {
@@ -10,14 +14,14 @@ export default function ComingSoonModal({ onClose }) {
 
   // Dismiss on ESC key
   useEffect(() => {
-    const handleKeyDown = (e) => {
+    const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
     };
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [onClose]);
 
-  const styles = {
+  const styles: Record<string, CSSProperties> = {
     overlay: {
       position: 'fixed',
       inset: 0,
@@ -97,4 +101,6 @@ export default function ComingSoonModal({ onClose }) {
       </div>
     </div>
   );
-}
+};
+
+export default ComingSoonModal;

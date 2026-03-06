@@ -1,11 +1,10 @@
-import { useState } from 'react';
+import { FC, useState, CSSProperties } from 'react';
 import ComingSoonModal from '../molecules/ComingSoonModal';
 
-export default function Header() {
-  const [searchQuery, setSearchQuery] = useState('');
+const Header: FC = () => {
   const [showModal, setShowModal] = useState(false);
 
-  const styles = {
+  const styles: Record<string, CSSProperties> = {
     header: {
       backgroundColor: 'white',
       borderBottom: '1px solid #e5e5e5',
@@ -87,7 +86,7 @@ export default function Header() {
           <input
             type="text"
             placeholder="Search products..."
-            value={searchQuery}
+            value=""
             readOnly
             onClick={() => setShowModal(true)}
             style={{ ...styles.searchInput, cursor: 'pointer' }}
@@ -98,7 +97,7 @@ export default function Header() {
           <button
             style={styles.iconButton}
             onClick={() => setShowModal(true)}
-            onMouseEnter={(e) => (e.currentTarget.style.color = styles.iconButtonHover.color)}
+            onMouseEnter={(e) => (e.currentTarget.style.color = styles.iconButtonHover.color as string)}
             onMouseLeave={(e) => (e.currentTarget.style.color = 'gray')}
             title="Shopping Cart"
             aria-label="Shopping Cart"
@@ -108,7 +107,7 @@ export default function Header() {
           <button
             style={styles.iconButton}
             onClick={() => setShowModal(true)}
-            onMouseEnter={(e) => (e.currentTarget.style.color = styles.iconButtonHover.color)}
+            onMouseEnter={(e) => (e.currentTarget.style.color = styles.iconButtonHover.color as string)}
             onMouseLeave={(e) => (e.currentTarget.style.color = 'gray')}
             title="User Account"
             aria-label="User Account"
@@ -120,4 +119,6 @@ export default function Header() {
       {showModal && <ComingSoonModal onClose={() => setShowModal(false)} />}
     </header>
   );
-}
+};
+
+export default Header;

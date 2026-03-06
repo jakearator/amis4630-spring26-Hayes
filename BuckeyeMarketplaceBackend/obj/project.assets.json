@@ -474,11 +474,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\jakea\\Documents\\amis4630-spring26-Hayes\\buckeyemarketplacebackend\\BuckeyeMarketplaceBackend.csproj",
+      "projectUniqueName": "C:\\Users\\jakea\\Documents\\amis4630-spring26-Hayes\\BuckeyeMarketplaceBackend\\BuckeyeMarketplaceBackend.csproj",
       "projectName": "BuckeyeMarketplaceBackend",
-      "projectPath": "C:\\Users\\jakea\\Documents\\amis4630-spring26-Hayes\\buckeyemarketplacebackend\\BuckeyeMarketplaceBackend.csproj",
+      "projectPath": "C:\\Users\\jakea\\Documents\\amis4630-spring26-Hayes\\BuckeyeMarketplaceBackend\\BuckeyeMarketplaceBackend.csproj",
       "packagesPath": "C:\\Users\\jakea\\.nuget\\packages\\",
-      "outputPath": "C:\\Users\\jakea\\Documents\\amis4630-spring26-Hayes\\buckeyemarketplacebackend\\obj\\",
+      "outputPath": "C:\\Users\\jakea\\Documents\\amis4630-spring26-Hayes\\BuckeyeMarketplaceBackend\\obj\\",
       "projectStyle": "PackageReference",
       "configFilePaths": [
         "C:\\Users\\jakea\\AppData\\Roaming\\NuGet\\NuGet.Config"

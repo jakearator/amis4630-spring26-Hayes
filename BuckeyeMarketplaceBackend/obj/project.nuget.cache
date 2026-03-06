@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "IY+EA4ARjos=",
+  "dgSpecHash": "wb0cIAovHDc=",
   "success": true,
-  "projectFilePath": "C:\\Users\\jakea\\Documents\\amis4630-spring26-Hayes\\buckeyemarketplacebackend\\BuckeyeMarketplaceBackend.csproj",
+  "projectFilePath": "C:\\Users\\jakea\\Documents\\amis4630-spring26-Hayes\\BuckeyeMarketplaceBackend\\BuckeyeMarketplaceBackend.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\jakea\\.nuget\\packages\\microsoft.aspnetcore.openapi\\8.0.0\\microsoft.aspnetcore.openapi.8.0.0.nupkg.sha512",
     "C:\\Users\\jakea\\.nuget\\packages\\microsoft.extensions.apidescription.server\\6.0.5\\microsoft.extensions.apidescription.server.6.0.5.nupkg.sha512",

@@ -1,5 +1,15 @@
-export default function Text({ children, variant = 'body', style = {} }) {
-  const variants = {
+import { FC, ReactNode, CSSProperties } from 'react';
+
+type TextVariant = 'h1' | 'h2' | 'h3' | 'body' | 'small' | 'label';
+
+interface TextProps {
+  children: ReactNode;
+  variant?: TextVariant;
+  style?: CSSProperties;
+}
+
+const Text: FC<TextProps> = ({ children, variant = 'body', style = {} }) => {
+  const variants: Record<TextVariant, CSSProperties> = {
     h1: {
       fontSize: '32px',
       fontWeight: '700',
@@ -40,8 +50,10 @@ export default function Text({ children, variant = 'body', style = {} }) {
     },
   };
 
-  const selectedVariant = variants[variant] || variants.body;
+  const selectedVariant = variants[variant];
   const mergedStyle = { ...selectedVariant, ...style };
 
   return <span style={mergedStyle}>{children}</span>;
-}
+};
+
+export default Text;

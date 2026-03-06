@@ -1,8 +1,14 @@
+import { FC, CSSProperties } from 'react';
 import { Link } from 'react-router-dom';
+import { Product } from '../../types';
 import Image from '../atoms/Image';
 
-export default function ProductCard({ product }) {
-  const styles = {
+interface ProductCardProps {
+  product: Product;
+}
+
+const ProductCard: FC<ProductCardProps> = ({ product }) => {
+  const styles: Record<string, CSSProperties> = {
     card: {
       backgroundColor: 'white',
       borderRadius: '10px',
@@ -57,7 +63,7 @@ export default function ProductCard({ product }) {
       WebkitLineClamp: 2,
       WebkitBoxOrient: 'vertical',
       overflow: 'hidden',
-    },
+    } as CSSProperties,
     brand: {
       fontSize: '13px',
       color: '#555',
@@ -84,12 +90,12 @@ export default function ProductCard({ product }) {
       <div
         style={styles.card}
         onMouseEnter={(e) => {
-          e.currentTarget.style.transform = styles.cardHover.transform;
-          e.currentTarget.style.boxShadow = styles.cardHover.boxShadow;
+          e.currentTarget.style.transform = styles.cardHover.transform as string;
+          e.currentTarget.style.boxShadow = styles.cardHover.boxShadow as string;
         }}
         onMouseLeave={(e) => {
           e.currentTarget.style.transform = 'none';
-          e.currentTarget.style.boxShadow = styles.card.boxShadow;
+          e.currentTarget.style.boxShadow = styles.card.boxShadow as string;
         }}
       >
         <div style={styles.imageContainer}>
@@ -105,10 +111,12 @@ export default function ProductCard({ product }) {
           <div style={styles.title}>{product.title}</div>
           <div style={styles.brand}>Brand: {product.brand}</div>
           <div style={styles.footer}>
-            <span style={styles.price}>${product.price}</span>
+            <span style={styles.price}>${Number(product.price).toFixed(2)}</span>
           </div>
         </div>
       </div>
     </Link>
   );
-}
+};
+
+export default ProductCard;

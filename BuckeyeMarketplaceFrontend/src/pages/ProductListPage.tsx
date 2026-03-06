@@ -1,13 +1,14 @@
-import { useState, useEffect } from 'react';
+import { FC, useState, useEffect, CSSProperties } from 'react';
+import { Product } from '../types';
 import { getProducts } from '../services/api';
 import Header from '../components/organisms/Header';
 import Hero from '../components/organisms/Hero';
 import ProductGrid from '../components/organisms/ProductGrid';
 
-export default function ProductListPage() {
-  const [products, setProducts] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+const ProductListPage: FC = () => {
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -17,7 +18,8 @@ export default function ProductListPage() {
         setProducts(data);
         setError(null);
       } catch (err) {
-        setError(err.message);
+        const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred';
+        setError(errorMessage);
         setProducts([]);
       } finally {
         setLoading(false);
@@ -27,7 +29,7 @@ export default function ProductListPage() {
     fetchProducts();
   }, []);
 
-  const styles = {
+  const styles: Record<string, CSSProperties> = {
     container: {
       minHeight: '100vh',
       backgroundColor: '#fafafa',
@@ -71,4 +73,6 @@ export default function ProductListPage() {
       {!loading && !error && <ProductGrid products={products} />}
     </div>
   );
-}
+};
+
+export default ProductListPage;

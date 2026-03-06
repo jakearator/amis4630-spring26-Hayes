@@ -1,5 +1,7 @@
-export default function Hero() {
-  const styles = {
+import { FC, CSSProperties } from 'react';
+
+const Hero: FC = () => {
+  const styles: Record<string, CSSProperties> = {
     hero: {
       backgroundColor: 'white',
       padding: '60px 20px',
@@ -33,4 +35,6 @@ export default function Hero() {
       </div>
     </section>
   );
-}
+};
+
+export default Hero;

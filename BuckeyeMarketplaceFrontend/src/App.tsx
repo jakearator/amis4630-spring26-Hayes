@@ -1,8 +1,9 @@
+import { FC } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import ProductListPage from './pages/ProductListPage';
 import ProductDetailPage from './pages/ProductDetailPage';
 
-export default function App() {
+const App: FC = () => {
   return (
     <Router>
       <Routes>
@@ -13,4 +14,6 @@ export default function App() {
       </Routes>
     </Router>
   );
-}
+};
+
+export default App;
