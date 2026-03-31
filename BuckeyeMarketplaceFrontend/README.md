@@ -30,6 +30,7 @@ src/
 │   │   └── Text.tsx                # Typography variants with variants
 │   ├── molecules/
 │   │   ├── ComingSoonModal.tsx     # Modal dialog component
+|   │   ├── CartFeedbackBanner.tsx  # Cart success/error feedback banner
 │   │   └── ProductCard.tsx         # ✨ TypeScript card with hover effects
 │   └── organisms/                  # Complex components
 │       ├── Header.tsx              # ✨ TypeScript sticky navigation
@@ -37,7 +38,11 @@ src/
 │       └── ProductGrid.tsx         # ✨ TypeScript responsive grid
 ├── pages/
 │   ├── ProductListPage.tsx         # ✨ TypeScript with API integration
-│   └── ProductDetailPage.tsx       # ✨ TypeScript complete redesign
+|   ├── ProductDetailPage.tsx       # ✨ TypeScript complete redesign
+|   └── CartPage.tsx                # Cart page with quantity controls and totals
+├── hooks/
+│   ├── useProducts.ts              # Product list data-loading hook
+│   └── useProductDetail.ts         # Product detail data-loading hook
 ├── services/
 │   └── api.ts                      # ✨ TypeScript API integration
 ├── types/
@@ -78,6 +83,8 @@ export interface Product {
   postedDate: string;
   imageUrl: string;
   brand?: string;
+  isAvailable: boolean;
+  stockQuantity: number;
 }
 ```
 
@@ -179,11 +186,31 @@ gridTemplateColumns: window.innerWidth >= 1200 ? 'repeat(4, 1fr)' : 'repeat(2, 1
 - ✨ Smooth hover effects (lift + shadow)
 - 🔄 2-line title truncation with ellipsis
 
+### Cart Experience (v2.3)
+- ✅ Cart state managed with Context API and typed async cart actions
+- ✅ Add to Cart from product listing cards
+- ✅ Add to Cart from product detail page
+- ✅ Update item quantity directly in cart
+- ✅ Remove individual cart items
+- ✅ Clear entire cart
+- ✅ Live cart item count badge in header/navigation
+- ✅ Cart subtotal and total calculations displayed correctly
+- ✅ Empty cart state with return-to-products action
+
+### Cart Reliability and UX (v2.3 - March 30, 2026)
+- ✅ Initial cart fetch loading state (`Loading your cart...`)
+- ✅ Cart API errors shown to users (not only in console)
+- ✅ Success feedback for add/update/remove/clear actions
+- ✅ Quantity floor enforcement (minimum quantity is `1`)
+- ✅ Increment/decrement controls disabled when limits are reached
+- ✅ Out-of-stock and unavailable products disable Add to Cart
+- ✅ Backend error messages are parsed and surfaced in UI
+
 ## API Integration
 
 The frontend connects to a .NET backend API:
 
-**Base URL:** `https://localhost:5001/api`
+**Base URL:** `http://localhost:5000/api`
 
 ### Endpoints
 
@@ -195,6 +222,7 @@ The frontend connects to a .NET backend API:
 - `/` - Redirects to `/products`
 - `/products` - Product listing page (with Header & Hero)
 - `/products/:id` - Product detail page
+- `/cart` - Cart page (quantity updates, remove, clear, totals)
 - `*` - Catches all unmatched routes and redirects to `/products`
 
 ## 🎨 Design System
@@ -322,10 +350,66 @@ Mobile (<768px):      1 column, 16px gap
 ## Notes
 
 - This is based on the Product Catalog Vertical Slice for Milestone 3
-- No authentication, state management, or cart functionality included (yet)
+- Cart state is implemented in `src/context/CartContext.tsx` with Context + typed async actions
+- Cart UI is composed from `src/pages/CartPage.tsx`, `src/components/organisms/CartItemList.tsx`,
+  `src/components/molecules/CartItemRow.tsx`, and `src/components/organisms/CartSummary.tsx`
+- Cart notifications are implemented in `src/components/molecules/CartFeedbackBanner.tsx`
 - Styling uses CSS-in-JS for component-scoped styles
 - Design follows Amazon-style minimalism but simpler and more elegant
 - Fully responsive on desktop, tablet, and mobile
+
+## Code Quality Workflow
+
+### 1) Clean Component Structure
+
+- Page files should orchestrate layout and feature flow, not contain full UI detail blocks.
+- Reusable cart UI building blocks now live in:
+  - `src/components/molecules/CartItemRow.tsx`
+  - `src/components/organisms/CartItemList.tsx`
+  - `src/components/organisms/CartSummary.tsx`
+
+### 2) Separation of Concerns
+
+- API calls stay in `src/services/api.ts`.
+- Data-fetch state for pages is handled by hooks:
+  - `src/hooks/useProducts.ts`
+  - `src/hooks/useProductDetail.ts`
+- Page components focus on rendering/loading/error states and event wiring.
+
+### 3) Naming and Pattern Consistency
+
+- Use boolean names prefixed with `is` (`isLoading`, `isMutatingCart`, `isAvailable`).
+- Use event handlers prefixed with `handle` (`handleClearCart`, `handleRemoveItem`).
+- Keep shared types in `src/types/index.ts`.
+
+### 4) Git Commit Message Standard
+
+Use clear messages that document intent and scope:
+
+```
+<type>(<scope>): <summary>
+
+<why>
+<what changed>
+<validation>
+```
+
+Suggested `type` values: `feat`, `refactor`, `fix`, `docs`, `test`, `chore`.
+
+Example:
+
+```
+refactor(cart): split cart page into focused UI components
+
+Improves readability for grading and team onboarding by reducing CartPage size.
+Extracted CartItemRow, CartItemList, and CartSummary components.
+Validated with npm run build.
+```
+
+### 5) AI Tool Usage Documentation
+
+- Track AI-assisted work in `AI_USAGE_LOG.md`.
+- For each entry include prompt summary, generated output, human modifications, and validation steps.
 
 ## Future Enhancements
 
@@ -333,7 +417,6 @@ Mobile (<768px):      1 column, 16px gap
 - [ ] Product filtering and sorting
 - [ ] Product reviews section
 - [ ] Wishlist feature
-- [ ] Shopping cart functionality
 - [ ] Checkout flow
 - [ ] User authentication
 - [ ] Dark mode support
@@ -355,7 +438,7 @@ Mobile (<768px):      1 column, 16px gap
 
 ---
 
-**Design Status**: ✅ Complete Minimalist Refactor (v2.0)  
+**Design Status**: ✅ Complete Minimalist Refactor + Cart UX (v2.3)  
 **Last Updated**: March 2026  
 **Design Philosophy**: Clean, Modern, Elegant, Fast
 

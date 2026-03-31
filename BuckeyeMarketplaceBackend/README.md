@@ -1,140 +1,184 @@
 # Buckeye Marketplace Backend
 
-Minimal .NET Web API backend for Milestone 3: Product Catalog Vertical Slice.
+ASP.NET Core 8 Web API with Entity Framework Core + SQLite persistence for products and cart workflows.
+
+## Database Setup Status (March 30, 2026)
+
+- Cart and CartItem entities are defined as EF Core entities.
+- Cart-to-Product relationship is implemented through CartItem navigation properties.
+- Initial cart/product migration is created and applied.
+- Product inventory metadata (`IsAvailable`, `StockQuantity`) is added and migrated.
+- Cart data persists in SQLite across page refreshes and browser sessions.
+- Seed data and test scenarios are documented below.
 
 ## Project Structure
 
-```
+```text
 BuckeyeMarketplaceBackend/
-├── Models/
-│   └── Product.cs          # Product data model
-├── Controllers/
-│   └── ProductsController.cs # API endpoints
-├── Properties/
-│   └── launchSettings.json  # Development configuration
-├── Program.cs              # Application entry point with CORS setup
-├── appsettings.json        # Application settings
-└── BuckeyeMarketplaceBackend.csproj # Project file
+|- Controllers/
+|  |- ProductsController.cs
+|  |- CartController.cs
+|- Data/
+|  |- MarketplaceDbContext.cs
+|- Models/
+|  |- Product.cs
+|  |- Cart.cs
+|  |- CartItem.cs
+|  |- AddCartItemRequest.cs
+|  |- UpdateCartItemRequest.cs
+|- Migrations/
+|  |- 20260330234343_InitialCreate.cs
+|  |- 20260330234343_InitialCreate.Designer.cs
+|  |- 20260330235442_AddProductAvailabilityAndStock.cs
+|  |- 20260330235442_AddProductAvailabilityAndStock.Designer.cs
+|  |- MarketplaceDbContextModelSnapshot.cs
+|- Program.cs
+|- appsettings.json
+|- BuckeyeMarketplaceBackend.csproj
 ```
 
-## Running the Backend
+## EF Core Entities and Relationships
 
-### Prerequisites
-- .NET 8.0 SDK
+- `Cart`
+  - `Id` (PK)
+  - `UserId` (unique)
+  - `Items` navigation (`List<CartItem>`)
+- `CartItem`
+  - `Id` (PK)
+  - `CartId` (FK -> `Cart.Id`)
+  - `ProductId` (FK -> `Product.Id`)
+  - `Quantity`
+  - `Cart` navigation
+  - `Product` navigation
+- `Product`
+  - Product catalog fields (`Title`, `Price`, `Category`, etc.)
+   - `IsAvailable`
+   - `StockQuantity`
+  - `CartItems` reverse navigation
 
-### Development
+Relationship summary:
+
+- One `Cart` to many `CartItem` rows.
+- One `Product` to many `CartItem` rows.
+- `Cart` to `Product` is many-to-many via `CartItem`.
+
+## Connection and Persistence
+
+`appsettings.json` uses:
+
+```json
+"ConnectionStrings": {
+  "DefaultConnection": "Data Source=buckeye-marketplace.db"
+}
+```
+
+Data is persisted in `buckeye-marketplace.db`, so cart state survives:
+
+- Browser refresh
+- Browser close/reopen
+- Frontend restart
+- Backend restart (same DB file)
+
+## Migrations
+
+Migration created and applied:
+
+- `20260330234343_InitialCreate`
+- `20260330235442_AddProductAvailabilityAndStock`
+
+Commands used:
+
 ```bash
 cd BuckeyeMarketplaceBackend
-dotnet run
+dotnet ef migrations add InitialCreate
+dotnet ef database update
 ```
 
-The API will run on: `http://localhost:5000` or `https://localhost:5001`
+At runtime, `Program.cs` also runs `Database.Migrate()` so schema updates are auto-applied on startup.
+
+## Seed Data
+
+`MarketplaceDbContext` seeds 8 products across categories:
+
+- Textbooks
+- Electronics
+- Furniture
+- Clothing
+
+Products are inserted via `HasData(...)` in `OnModelCreating`.
 
 ## API Endpoints
 
-Once the server is running, you can access the API:
+### Products
 
-### Get All Products
-Open your browser and go to:
-```
-http://localhost:5000/api/products
-```
+- `GET /api/products`
+- `GET /api/products/{id}`
 
-This returns a JSON array of all 8 products.
+### Cart
 
-### Get Product by ID
-Open your browser and go to:
-```
-http://localhost:5000/api/products/1
-```
+- `GET /api/cart`
+- `POST /api/cart`
+- `PUT /api/cart/{cartItemId}`
+- `DELETE /api/cart/{cartItemId}`
+- `DELETE /api/cart/clear`
 
-Replace `1` with any product ID (1-8). Returns a single product or **404** if not found.
+Current user is hardcoded as `user-123` until authentication is added.
 
-Example URLs:
-- `http://localhost:5000/api/products/1` - Calculus Textbook
-- `http://localhost:5000/api/products/3` - MacBook Pro Stand
-- `http://localhost:5000/api/products/5` - Wooden Desk Organizer
-- `http://localhost:5000/api/products/99` - Returns 404 (product doesn't exist)
+## Cart Validation and Edge-Case Handling
 
-## Product Model
+`CartController` enforces the following:
 
-```json
-{
-  "id": 1,
-  "title": "Calculus 1 Textbook (Math 1151)",
-  "description": "Used Calculus textbook in excellent condition. Covers limits, derivatives, and integrals.",
-  "price": 89.99,
-  "category": "Textbooks",
-  "brand": "Pearson",
-  "postedDate": "2026-03-01T00:00:00",
-  "imageUrl": "https://images.unsplash.com/photo-1543002588-d83ceddf1f7f?w=800"
-}
-```
+- Duplicate adds increment existing cart item quantity.
+- Quantity must be greater than `0` in update requests.
+- Product must exist before cart add.
+- Product must be available (`IsAvailable = true`) for add/update.
+- Product must have stock (`StockQuantity > 0`) for add.
+- Requested quantity cannot exceed stock on add/update.
 
-## Features
+Typical backend responses include:
 
-- ✅ In-memory data store (no database)
-- ✅ 8 seeded products across 4 categories (Books, Electronics, Furniture, Clothing)
-- ✅ CORS enabled for React frontend at `http://localhost:5173`
-- ✅ Minimal and simple implementation (~100 lines)
-- ✅ No authentication, databases, or external dependencies
+- `400 BadRequest` for invalid quantity or quantity exceeding stock.
+- `404 NotFound` for missing product/cart item.
+- `409 Conflict` for unavailable or out-of-stock products.
 
-## CORS Configuration
+## Test Scenarios
 
-The backend is configured to accept requests from `http://localhost:5173` to support the React frontend development server.
+1. Add item and refresh persistence
+   - `POST /api/cart` with `{ "productId": 1, "quantity": 2 }`
+   - Refresh frontend page
+   - `GET /api/cart` still returns the item
 
-## Categories
+2. Session persistence
+   - Add multiple items from frontend
+   - Close browser tab/window
+   - Reopen app and navigate to cart
+   - Items remain present
 
-The seeded products include:
-- **Textbooks** (2 products)
-- **Electronics** (2 products)
-- **Furniture** (2 products)
-- **Clothing** (2 products)
+3. Quantity update persistence
+   - `PUT /api/cart/{cartItemId}` with `{ "quantity": 3 }`
+   - Refresh page
+   - Quantity remains `3`
 
-## Implementation Notes
+4. Stock and availability validation
+   - Attempt add on product with `StockQuantity = 0`
+   - API returns a conflict with out-of-stock message
+   - Attempt add/update above `StockQuantity`
+   - API returns bad request with stock-limit message
 
-### In-Memory Data Store
-**Decision**: Used a static `List<Product>` for simplicity rather than a database, keeping the API lightweight and easy to test.
-```csharp
-private static List<Product> Products = new() { ... };
-```
+5. Remove and clear
+   - `DELETE /api/cart/{cartItemId}` removes one row
+   - `DELETE /api/cart/clear` removes all rows for `user-123`
 
-### Frontend API Alignment (v2.1)
-The backend API is fully aligned with the TypeScript frontend:
-- ✅ All endpoints return properties matching the frontend `Product` interface
-- ✅ `brand` property properly exposed for product cards
-- ✅ `postedDate` in ISO 8601 format for JavaScript Date parsing
-- ✅ `imageUrl` for product images with fallback support
-- ✅ No extraneous properties that frontend doesn't use
+6. Migration/schema verification
+   - Start backend on clean machine
+   - Confirm tables exist: `Carts`, `CartItems`, `Products`, `__EFMigrationsHistory`
 
-### Product Model Extension
-**Decision**: Added `Brand` field to products for better marketplace context.
-```csharp
-public class Product
-{
-    public int Id { get; set; }
-    public string? Title { get; set; }
-    public string? Description { get; set; }
-    public decimal Price { get; set; }
-    public string? Category { get; set; }
-    public string? Brand { get; set; }
-    public DateTime PostedDate { get; set; }
-    public string? ImageUrl { get; set; }
-}
+## Running the Backend
+
+```bash
+cd BuckeyeMarketplaceBackend
+dotnet restore
+dotnet run
 ```
 
-### CORS Configuration
-**Decision**: Configured CORS to allow requests only from the React dev server at `http://localhost:5173`, ensuring secure frontend-backend communication.
-```csharp
-options.AddPolicy("ReactFrontend", policy =>
-{
-    policy.WithOrigins("http://localhost:5173")
-        .AllowAnyMethod()
-        .AllowAnyHeader();
-});
-```
-
-### API Endpoints with Error Handling
-**Decision**: Implemented standard REST endpoints with proper HTTP status codes (200, 404) for improved frontend error handling.
-- `GET /api/products` → Returns all products
-- `GET /api/products/{id}` → Returns single product or 404
+Default API URL is `http://localhost:5000`.

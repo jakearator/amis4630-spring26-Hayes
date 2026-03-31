@@ -1,33 +1,14 @@
-import { FC, useState, useEffect, CSSProperties } from 'react';
-import { Product } from '../types';
-import { getProducts } from '../services/api';
+import { CSSProperties, FC } from 'react';
 import Header from '../components/organisms/Header';
 import Hero from '../components/organisms/Hero';
 import ProductGrid from '../components/organisms/ProductGrid';
+import CartFeedbackBanner from '../components/molecules/CartFeedbackBanner';
+import { useCart } from '../context/CartContext';
+import { useProducts } from '../hooks/useProducts';
 
 const ProductListPage: FC = () => {
-  const [products, setProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    const fetchProducts = async () => {
-      try {
-        setLoading(true);
-        const data = await getProducts();
-        setProducts(data);
-        setError(null);
-      } catch (err) {
-        const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred';
-        setError(errorMessage);
-        setProducts([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchProducts();
-  }, []);
+  const { products, isLoading, error } = useProducts();
+  const { addItem, cartError, cartSuccess, clearCartMessages } = useCart();
 
   const styles: Record<string, CSSProperties> = {
     container: {
@@ -56,9 +37,14 @@ const ProductListPage: FC = () => {
   return (
     <div style={styles.container}>
       <Header />
+      <CartFeedbackBanner
+        error={cartError}
+        success={cartSuccess}
+        onDismiss={clearCartMessages}
+      />
       <Hero />
 
-      {loading && (
+      {isLoading && (
         <div style={styles.loadingContainer}>
           <p>Loading products...</p>
         </div>
@@ -70,7 +56,7 @@ const ProductListPage: FC = () => {
         </div>
       )}
 
-      {!loading && !error && <ProductGrid products={products} />}
+      {!isLoading && !error && <ProductGrid products={products} onAddToCart={addItem} />}
     </div>
   );
 };

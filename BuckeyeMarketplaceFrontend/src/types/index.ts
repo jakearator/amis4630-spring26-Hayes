@@ -14,6 +14,27 @@ export interface Product {
   postedDate: string;
   imageUrl: string;
   brand?: string;
+  isAvailable: boolean;
+  stockQuantity: number;
+}
+
+export interface CartItem extends Product {
+  cartItemId: number;
+  quantity: number;
+}
+
+export interface CartApiItem {
+  id: number;
+  cartId: number;
+  productId: number;
+  quantity: number;
+  product: Product;
+}
+
+export interface CartApiResponse {
+  id: number;
+  userId: string;
+  items: CartApiItem[];
 }
 
 /**

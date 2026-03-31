@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace BuckeyeMarketplaceBackend.Models
 {
     public class Product
@@ -10,5 +12,9 @@ namespace BuckeyeMarketplaceBackend.Models
         public string? Brand { get; set; }
         public DateTime PostedDate { get; set; }
         public string? ImageUrl { get; set; }
+        public bool IsAvailable { get; set; } = true;
+        public int StockQuantity { get; set; }
+        [JsonIgnore]
+        public List<CartItem> CartItems { get; set; } = new();
     }
 }

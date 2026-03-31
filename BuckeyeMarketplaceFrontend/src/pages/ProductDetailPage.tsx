@@ -1,40 +1,22 @@
-import { FC, useState, useEffect, CSSProperties } from 'react';
+import { CSSProperties, FC } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { Product } from '../types';
-import { getProductById } from '../services/api';
 import Header from '../components/organisms/Header';
 import Image from '../components/atoms/Image';
 import Button from '../components/atoms/Button';
+import CartFeedbackBanner from '../components/molecules/CartFeedbackBanner';
+import { useCart } from '../context/CartContext';
+import { useProductDetail } from '../hooks/useProductDetail';
 
 const ProductDetailPage: FC = () => {
   const { id } = useParams<{ id: string }>();
-  const [product, setProduct] = useState<Product | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [notFound, setNotFound] = useState<boolean>(false);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    const fetchProduct = async () => {
-      try {
-        setLoading(true);
-        const data = await getProductById(id as string | number);
-        if (data === null) {
-          setNotFound(true);
-        } else {
-          setProduct(data);
-          setNotFound(false);
-        }
-        setError(null);
-      } catch (err) {
-        const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred';
-        setError(errorMessage);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchProduct();
-  }, [id]);
+  const { product, isLoading, notFound, error } = useProductDetail(id);
+  const {
+    addItem,
+    cartError,
+    cartSuccess,
+    clearCartMessages,
+    isMutatingCart,
+  } = useCart();
 
   const styles: Record<string, CSSProperties> = {
     page: {
@@ -140,6 +122,12 @@ const ProductDetailPage: FC = () => {
       marginTop: 'auto',
       paddingTop: '20px',
     },
+    stockStatus: {
+      marginBottom: '16px',
+      fontSize: '14px',
+      fontWeight: '600',
+      color: '#444',
+    },
     loading: {
       display: 'flex',
       alignItems: 'center',
@@ -168,7 +156,7 @@ const ProductDetailPage: FC = () => {
     },
   };
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div style={styles.page}>
         <Header />
@@ -194,7 +182,7 @@ const ProductDetailPage: FC = () => {
     );
   }
 
-  if (notFound) {
+  if (notFound || !product) {
     return (
       <div style={styles.page}>
         <Header />
@@ -227,6 +215,11 @@ const ProductDetailPage: FC = () => {
   return (
     <div style={styles.page}>
       <Header />
+      <CartFeedbackBanner
+        error={cartError}
+        success={cartSuccess}
+        onDismiss={clearCartMessages}
+      />
       <div style={styles.container}>
         <div style={styles.backButton}>
           <Link to="/products" style={styles.backLink}>
@@ -237,34 +230,45 @@ const ProductDetailPage: FC = () => {
         <div style={styles.content}>
           <div style={styles.imageContainer}>
             <Image
-              src={product!.imageUrl}
-              alt={product!.title}
+              src={product.imageUrl}
+              alt={product.title}
               width="100%"
               height="100%"
             />
           </div>
 
           <div style={styles.details}>
-            <span style={styles.category}>{product!.category}</span>
-            <h1 style={styles.title}>{product!.title}</h1>
+            <span style={styles.category}>{product.category}</span>
+            <h1 style={styles.title}>{product.title}</h1>
 
             <div style={styles.brand}>
-              Brand: <span style={styles.brandName}>{product!.brand}</span>
+              Brand: <span style={styles.brandName}>{product.brand}</span>
             </div>
-            <div style={styles.postedDate}>Added {formatDate(product!.postedDate)}</div>
+            <div style={styles.postedDate}>Added {formatDate(product.postedDate)}</div>
 
             <div style={styles.divider} />
 
-            <div style={styles.price}>${(product!.price).toFixed(2)}</div>
+            <div style={styles.price}>${product.price.toFixed(2)}</div>
+
+            <div style={styles.stockStatus}>
+              {!product.isAvailable
+                ? 'This product is currently unavailable.'
+                : product.stockQuantity <= 0
+                  ? 'This product is out of stock.'
+                  : `In stock: ${product.stockQuantity}`}
+            </div>
 
             <div>
               <p style={styles.descriptionLabel}>Description</p>
-              <p style={styles.description}>{product!.description}</p>
+              <p style={styles.description}>{product.description}</p>
             </div>
 
             <div style={styles.buttonContainer}>
-              <Button onClick={() => alert('Add to cart functionality coming soon!')}>
-                Add to Cart
+              <Button
+                onClick={() => void addItem(product)}
+                disabled={isMutatingCart || !product.isAvailable || product.stockQuantity <= 0}
+              >
+                {isMutatingCart ? 'Updating Cart...' : 'Add to Cart'}
               </Button>
             </div>
           </div>

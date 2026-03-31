@@ -1,10 +1,16 @@
-using BuckeyeMarketplaceBackend.Controllers;
-using BuckeyeMarketplaceBackend.Models;
+using BuckeyeMarketplaceBackend.Data;
+using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container
 builder.Services.AddControllers();
+builder.Services.AddDbContext<MarketplaceDbContext>(options =>
+{
+    var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
+        ?? "Data Source=buckeye-marketplace.db";
+    options.UseSqlite(connectionString);
+});
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("ReactFrontend", policy =>
@@ -17,6 +23,12 @@ builder.Services.AddCors(options =>
 builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
+
+using (var scope = app.Services.CreateScope())
+{
+    var dbContext = scope.ServiceProvider.GetRequiredService<MarketplaceDbContext>();
+    dbContext.Database.Migrate();
+}
 
 // Configure the HTTP request pipeline
 if (app.Environment.IsDevelopment())

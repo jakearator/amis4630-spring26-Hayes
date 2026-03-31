@@ -2,12 +2,18 @@ import { FC, CSSProperties } from 'react';
 import { Link } from 'react-router-dom';
 import { Product } from '../../types';
 import Image from '../atoms/Image';
+import Button from '../atoms/Button';
 
 interface ProductCardProps {
   product: Product;
+  onAddToCart: (product: Product) => Promise<void>;
 }
 
-const ProductCard: FC<ProductCardProps> = ({ product }) => {
+const ProductCard: FC<ProductCardProps> = ({ product, onAddToCart }) => {
+  const isOutOfStock = product.stockQuantity <= 0;
+  const isUnavailable = !product.isAvailable;
+  const disableAddToCart = isOutOfStock || isUnavailable;
+
   const styles: Record<string, CSSProperties> = {
     card: {
       backgroundColor: 'white',
@@ -36,7 +42,7 @@ const ProductCard: FC<ProductCardProps> = ({ product }) => {
     },
     content: {
       padding: '16px',
-      flex: '1',
+      flex: 1,
       display: 'flex',
       flexDirection: 'column',
     },
@@ -71,33 +77,48 @@ const ProductCard: FC<ProductCardProps> = ({ product }) => {
       fontWeight: '400',
     },
     footer: {
-      marginTop: 'auto',
-      paddingTop: '12px',
+      padding: '12px 16px 16px',
       borderTop: '1px solid #f0f0f0',
       display: 'flex',
-      justifyContent: 'space-between',
-      alignItems: 'center',
+      flexDirection: 'column',
+      alignItems: 'stretch',
+      gap: '12px',
     },
     price: {
       fontSize: '18px',
       fontWeight: '700',
       color: '#BB0000',
     },
+    buttonWrap: {
+      width: '100%',
+    },
+    stockStatus: {
+      fontSize: '12px',
+      fontWeight: '600',
+      color: isUnavailable ? '#991b1b' : isOutOfStock ? '#92400e' : '#166534',
+    },
+    link: {
+      textDecoration: 'none',
+      color: 'inherit',
+      display: 'flex',
+      flexDirection: 'column',
+      flex: 1,
+    },
   };
 
   return (
-    <Link to={`/products/${product.id}`} style={{ textDecoration: 'none', color: 'inherit' }}>
-      <div
-        style={styles.card}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.transform = styles.cardHover.transform as string;
-          e.currentTarget.style.boxShadow = styles.cardHover.boxShadow as string;
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.transform = 'none';
-          e.currentTarget.style.boxShadow = styles.card.boxShadow as string;
-        }}
-      >
+    <div
+      style={styles.card}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.transform = styles.cardHover.transform as string;
+        e.currentTarget.style.boxShadow = styles.cardHover.boxShadow as string;
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.transform = 'none';
+        e.currentTarget.style.boxShadow = styles.card.boxShadow as string;
+      }}
+    >
+      <Link to={`/products/${product.id}`} style={styles.link}>
         <div style={styles.imageContainer}>
           <Image
             src={product.imageUrl}
@@ -110,12 +131,24 @@ const ProductCard: FC<ProductCardProps> = ({ product }) => {
           <span style={styles.category}>{product.category}</span>
           <div style={styles.title}>{product.title}</div>
           <div style={styles.brand}>Brand: {product.brand}</div>
-          <div style={styles.footer}>
-            <span style={styles.price}>${Number(product.price).toFixed(2)}</span>
-          </div>
+        </div>
+      </Link>
+      <div style={styles.footer}>
+        <span style={styles.price}>${Number(product.price).toFixed(2)}</span>
+        <span style={styles.stockStatus}>
+          {isUnavailable
+            ? 'Unavailable'
+            : isOutOfStock
+              ? 'Out of stock'
+              : `${product.stockQuantity} in stock`}
+        </span>
+        <div style={styles.buttonWrap}>
+          <Button onClick={() => void onAddToCart(product)} disabled={disableAddToCart}>
+            Add to Cart
+          </Button>
         </div>
       </div>
-    </Link>
+    </div>
   );
 };
 

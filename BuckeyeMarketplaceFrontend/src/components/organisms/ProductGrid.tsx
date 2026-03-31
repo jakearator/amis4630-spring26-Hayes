@@ -4,9 +4,10 @@ import ProductCard from '../molecules/ProductCard';
 
 interface ProductGridProps {
   products: Product[];
+  onAddToCart: (product: Product) => Promise<void>;
 }
 
-const ProductGrid: FC<ProductGridProps> = ({ products }) => {
+const ProductGrid: FC<ProductGridProps> = ({ products, onAddToCart }) => {
   const styles: Record<string, CSSProperties> = {
     gridContainer: {
       maxWidth: '1200px',
@@ -45,7 +46,7 @@ const ProductGrid: FC<ProductGridProps> = ({ products }) => {
     <div style={styles.gridContainer}>
       <div style={styles.grid}>
         {products.map((product) => (
-          <ProductCard key={product.id} product={product} />
+          <ProductCard key={product.id} product={product} onAddToCart={onAddToCart} />
         ))}
       </div>
     </div>

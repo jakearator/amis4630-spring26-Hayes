@@ -4,20 +4,22 @@ interface ButtonProps {
   children: ReactNode;
   onClick?: () => void;
   type?: 'button' | 'submit' | 'reset';
+  disabled?: boolean;
 }
 
-const Button: FC<ButtonProps> = ({ children, onClick, type = 'button' }) => {
+const Button: FC<ButtonProps> = ({ children, onClick, type = 'button', disabled = false }) => {
   const styles: Record<string, CSSProperties> = {
     button: {
       padding: '12px 24px',
       fontSize: '14px',
       fontWeight: '600',
-      backgroundColor: '#BB0000',
+      backgroundColor: disabled ? '#c9c9c9' : '#BB0000',
       color: 'white',
       border: 'none',
       borderRadius: '6px',
-      cursor: 'pointer',
+      cursor: disabled ? 'not-allowed' : 'pointer',
       transition: 'background-color 0.2s ease, transform 0.2s ease',
+      opacity: disabled ? 0.85 : 1,
     },
     hover: {
       backgroundColor: '#9a0000',
@@ -31,11 +33,24 @@ const Button: FC<ButtonProps> = ({ children, onClick, type = 'button' }) => {
     <button
       type={type}
       onClick={onClick}
+      disabled={disabled}
       style={styles.button}
-      onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = styles.hover.backgroundColor as string)}
-      onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = '#BB0000')}
-      onMouseDown={(e) => (e.currentTarget.style.transform = styles.active.transform as string)}
-      onMouseUp={(e) => (e.currentTarget.style.transform = '')}
+      onMouseEnter={(e) => {
+        if (!disabled) {
+          e.currentTarget.style.backgroundColor = styles.hover.backgroundColor as string;
+        }
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.backgroundColor = disabled ? '#c9c9c9' : '#BB0000';
+      }}
+      onMouseDown={(e) => {
+        if (!disabled) {
+          e.currentTarget.style.transform = styles.active.transform as string;
+        }
+      }}
+      onMouseUp={(e) => {
+        e.currentTarget.style.transform = '';
+      }}
     >
       {children}
     </button>

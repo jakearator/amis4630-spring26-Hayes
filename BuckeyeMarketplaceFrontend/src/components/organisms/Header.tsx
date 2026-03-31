@@ -1,8 +1,11 @@
 import { FC, useState, CSSProperties } from 'react';
+import { Link } from 'react-router-dom';
 import ComingSoonModal from '../molecules/ComingSoonModal';
+import { useCart } from '../../context/CartContext';
 
 const Header: FC = () => {
   const [showModal, setShowModal] = useState(false);
+  const { itemCount } = useCart();
 
   const styles: Record<string, CSSProperties> = {
     header: {
@@ -65,22 +68,37 @@ const Header: FC = () => {
       color: '#666',
       transition: 'color 0.2s',
       padding: '8px',
+      textDecoration: 'none',
+      position: 'relative',
     },
     iconButtonHover: {
       color: '#BB0000',
+    },
+    cartCountBadge: {
+      position: 'absolute',
+      top: '-2px',
+      right: '-4px',
+      minWidth: '18px',
+      height: '18px',
+      borderRadius: '999px',
+      backgroundColor: '#BB0000',
+      color: 'white',
+      fontSize: '11px',
+      fontWeight: '700',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: '0 5px',
+      lineHeight: 1,
     },
   };
 
   return (
     <header style={styles.header}>
       <div style={styles.container}>
-        <button
-          style={styles.logo}
-          onClick={() => setShowModal(true)}
-          aria-label="Buckeye Marketplace home"
-        >
+        <Link to="/products" style={styles.logo} aria-label="Buckeye Marketplace home">
           Buckeye Marketplace
-        </button>
+        </Link>
         
         <div style={styles.searchContainer}>
           <input
@@ -94,16 +112,17 @@ const Header: FC = () => {
         </div>
 
         <div style={styles.icons}>
-          <button
+          <Link
+            to="/cart"
             style={styles.iconButton}
-            onClick={() => setShowModal(true)}
             onMouseEnter={(e) => (e.currentTarget.style.color = styles.iconButtonHover.color as string)}
             onMouseLeave={(e) => (e.currentTarget.style.color = 'gray')}
             title="Shopping Cart"
             aria-label="Shopping Cart"
           >
             🛒
-          </button>
+            {itemCount > 0 && <span style={styles.cartCountBadge}>{itemCount}</span>}
+          </Link>
           <button
             style={styles.iconButton}
             onClick={() => setShowModal(true)}

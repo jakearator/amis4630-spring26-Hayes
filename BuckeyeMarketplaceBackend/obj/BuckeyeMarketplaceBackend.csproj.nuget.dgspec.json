@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\jakea\\Documents\\amis4630-spring26-Hayes\\BuckeyeMarketplaceBackend\\BuckeyeMarketplaceBackend.csproj": {}
+    "C:\\Users\\jakea\\Documents\\amis4630-spring26-Hayes\\buckeyemarketplacebackend\\BuckeyeMarketplaceBackend.csproj": {}
   },
   "projects": {
-    "C:\\Users\\jakea\\Documents\\amis4630-spring26-Hayes\\BuckeyeMarketplaceBackend\\BuckeyeMarketplaceBackend.csproj": {
+    "C:\\Users\\jakea\\Documents\\amis4630-spring26-Hayes\\buckeyemarketplacebackend\\BuckeyeMarketplaceBackend.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\jakea\\Documents\\amis4630-spring26-Hayes\\BuckeyeMarketplaceBackend\\BuckeyeMarketplaceBackend.csproj",
+        "projectUniqueName": "C:\\Users\\jakea\\Documents\\amis4630-spring26-Hayes\\buckeyemarketplacebackend\\BuckeyeMarketplaceBackend.csproj",
         "projectName": "BuckeyeMarketplaceBackend",
-        "projectPath": "C:\\Users\\jakea\\Documents\\amis4630-spring26-Hayes\\BuckeyeMarketplaceBackend\\BuckeyeMarketplaceBackend.csproj",
+        "projectPath": "C:\\Users\\jakea\\Documents\\amis4630-spring26-Hayes\\buckeyemarketplacebackend\\BuckeyeMarketplaceBackend.csproj",
         "packagesPath": "C:\\Users\\jakea\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\jakea\\Documents\\amis4630-spring26-Hayes\\BuckeyeMarketplaceBackend\\obj\\",
+        "outputPath": "C:\\Users\\jakea\\Documents\\amis4630-spring26-Hayes\\buckeyemarketplacebackend\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "C:\\Users\\jakea\\AppData\\Roaming\\NuGet\\NuGet.Config"
@@ -44,6 +44,16 @@
           "targetAlias": "net8.0",
           "dependencies": {
             "Microsoft.AspNetCore.OpenApi": {
+              "target": "Package",
+              "version": "[8.0.0, )"
+            },
+            "Microsoft.EntityFrameworkCore.Design": {
+              "include": "Runtime, Build, Native, ContentFiles, Analyzers, BuildTransitive",
+              "suppressParent": "All",
+              "target": "Package",
+              "version": "[8.0.0, )"
+            },
+            "Microsoft.EntityFrameworkCore.Sqlite": {
               "target": "Package",
               "version": "[8.0.0, )"
             },
