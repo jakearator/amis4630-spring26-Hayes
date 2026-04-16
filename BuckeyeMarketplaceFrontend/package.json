@@ -6,7 +6,14 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test": "vitest",
+    "test:run": "vitest run",
+    "test:e2e": "playwright test",
+    "clean:artifacts": "powershell -NoProfile -ExecutionPolicy Bypass -File ../scripts/clean-artifacts.ps1",
+    "test:run:clean": "npm run clean:artifacts; npm run test:run",
+    "artifacts:preview": "powershell -NoProfile -ExecutionPolicy Bypass -File ../scripts/untrack-artifacts.ps1",
+    "artifacts:untrack": "powershell -NoProfile -ExecutionPolicy Bypass -File ../scripts/untrack-artifacts.ps1 -Apply"
   },
   "dependencies": {
     "react": "^18.2.0",
@@ -14,11 +21,17 @@
     "react-router-dom": "^6.20.0"
   },
   "devDependencies": {
+    "@testing-library/jest-dom": "^6.4.8",
+    "@testing-library/react": "^16.0.0",
+    "@testing-library/user-event": "^14.5.2",
+    "@playwright/test": "^1.54.2",
     "@vitejs/plugin-react": "^4.2.0",
     "@types/node": "^20.10.0",
     "@types/react": "^18.2.0",
     "@types/react-dom": "^18.2.0",
     "typescript": "^5.3.0",
-    "vite": "^5.0.0"
+    "vite": "^5.0.0",
+    "vitest": "^2.1.8",
+    "jsdom": "^25.0.1"
   }
 }

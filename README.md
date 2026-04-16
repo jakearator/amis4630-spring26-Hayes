@@ -27,3 +27,23 @@ For implementation details:
 - Frontend component and hook quality workflow: `BuckeyeMarketplaceFrontend/README.md`
 - AI-assisted development log: `BuckeyeMarketplaceFrontend/AI_USAGE_LOG.md`
 - Commit message convention: documented in `BuckeyeMarketplaceFrontend/README.md`
+
+## Artifact and Output Hygiene
+
+To reduce Git noise and keep generated files from being committed accidentally:
+
+- Repository-level ignore rules now cover .NET and frontend build/test outputs in `.gitignore`.
+- A reusable cleanup script is available at `scripts/clean-artifacts.ps1`.
+- A one-time tracked-artifact migration script is available at `scripts/untrack-artifacts.ps1`.
+- Frontend convenience scripts:
+	- `npm run clean:artifacts`
+	- `npm run test:run:clean`
+	- `npm run artifacts:preview`
+	- `npm run artifacts:untrack`
+
+Recommended migration flow:
+
+1. Run `npm run artifacts:preview` to see tracked artifacts.
+2. Run `npm run artifacts:untrack` once.
+3. Commit that change.
+4. Use `npm run clean:artifacts` as needed going forward.
