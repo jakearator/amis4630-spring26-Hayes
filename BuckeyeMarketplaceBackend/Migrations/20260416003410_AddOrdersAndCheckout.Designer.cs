@@ -3,6 +3,7 @@ using System;
 using BuckeyeMarketplaceBackend.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace BuckeyeMarketplaceBackend.Migrations
 {
     [DbContext(typeof(MarketplaceDbContext))]
-    partial class MarketplaceDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260416003410_AddOrdersAndCheckout")]
+    partial class AddOrdersAndCheckout
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "8.0.0");

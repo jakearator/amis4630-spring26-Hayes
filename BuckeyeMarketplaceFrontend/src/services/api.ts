@@ -1,6 +1,44 @@
-import { CartApiResponse, Product, ProductListResponse, ProductResponse } from '../types';
+import {
+  AuthResponse,
+  CartApiResponse,
+  LoginRequest,
+  Order,
+  OrderHistoryResponse,
+  PlaceOrderRequest,
+  Product,
+  ProductListResponse,
+  ProductResponse,
+  ProductUpsertRequest,
+  RegisterRequest,
+  UpdateOrderStatusRequest,
+} from '../types';
+import { getAccessToken } from './authStorage';
 
 const API_BASE_URL = 'http://localhost:5000/api';
+
+const buildHeaders = (headers?: HeadersInit): Headers => {
+  const mergedHeaders = new Headers(headers);
+  const accessToken = getAccessToken();
+
+  if (accessToken) {
+    mergedHeaders.set('Authorization', `Bearer ${accessToken}`);
+  }
+
+  return mergedHeaders;
+};
+
+const apiFetch = async (input: string, init?: RequestInit): Promise<Response> => {
+  const response = await fetch(`${API_BASE_URL}${input}`, {
+    ...init,
+    headers: buildHeaders(init?.headers),
+  });
+
+  if (response.status === 401 && typeof window !== 'undefined') {
+    window.dispatchEvent(new Event('auth:unauthorized'));
+  }
+
+  return response;
+};
 
 const buildApiError = async (response: Response, fallback: string): Promise<Error> => {
   let message = '';
@@ -37,7 +75,7 @@ const buildApiError = async (response: Response, fallback: string): Promise<Erro
  */
 export const getProducts = async (): Promise<ProductListResponse> => {
   try {
-    const response = await fetch(`${API_BASE_URL}/products`);
+    const response = await apiFetch('/products');
 
     if (!response.ok) {
       throw await buildApiError(response, 'Failed to fetch products');
@@ -55,7 +93,7 @@ export const getProducts = async (): Promise<ProductListResponse> => {
  */
 export const getProductById = async (id: string | number): Promise<ProductResponse> => {
   try {
-    const response = await fetch(`${API_BASE_URL}/products/${id}`);
+    const response = await apiFetch(`/products/${id}`);
 
     if (!response.ok) {
       if (response.status === 404) {
@@ -72,7 +110,7 @@ export const getProductById = async (id: string | number): Promise<ProductRespon
 };
 
 export const getCart = async (): Promise<CartApiResponse> => {
-  const response = await fetch(`${API_BASE_URL}/cart`);
+  const response = await apiFetch('/cart');
 
   if (!response.ok) {
     throw await buildApiError(response, 'Failed to fetch cart');
@@ -82,7 +120,7 @@ export const getCart = async (): Promise<CartApiResponse> => {
 };
 
 export const addCartItem = async (productId: number, quantity = 1): Promise<CartApiResponse> => {
-  const response = await fetch(`${API_BASE_URL}/cart`, {
+  const response = await apiFetch('/cart', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -101,7 +139,7 @@ export const updateCartItemQuantity = async (
   cartItemId: number,
   quantity: number,
 ): Promise<CartApiResponse> => {
-  const response = await fetch(`${API_BASE_URL}/cart/${cartItemId}`, {
+  const response = await apiFetch(`/cart/${cartItemId}`, {
     method: 'PUT',
     headers: {
       'Content-Type': 'application/json',
@@ -117,7 +155,7 @@ export const updateCartItemQuantity = async (
 };
 
 export const removeCartItem = async (cartItemId: number): Promise<CartApiResponse> => {
-  const response = await fetch(`${API_BASE_URL}/cart/${cartItemId}`, {
+  const response = await apiFetch(`/cart/${cartItemId}`, {
     method: 'DELETE',
   });
 
@@ -129,7 +167,7 @@ export const removeCartItem = async (cartItemId: number): Promise<CartApiRespons
 };
 
 export const clearCart = async (): Promise<CartApiResponse> => {
-  const response = await fetch(`${API_BASE_URL}/cart/clear`, {
+  const response = await apiFetch('/cart/clear', {
     method: 'DELETE',
   });
 
@@ -138,4 +176,133 @@ export const clearCart = async (): Promise<CartApiResponse> => {
   }
 
   return (await response.json()) as CartApiResponse;
+};
+
+export const login = async (request: LoginRequest): Promise<AuthResponse> => {
+  const response = await apiFetch('/auth/login', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(request),
+  });
+
+  if (!response.ok) {
+    throw await buildApiError(response, 'Failed to login');
+  }
+
+  return (await response.json()) as AuthResponse;
+};
+
+export const register = async (request: RegisterRequest): Promise<AuthResponse> => {
+  const response = await apiFetch('/auth/register', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(request),
+  });
+
+  if (!response.ok) {
+    throw await buildApiError(response, 'Failed to register');
+  }
+
+  return (await response.json()) as AuthResponse;
+};
+
+export const placeOrder = async (request: PlaceOrderRequest): Promise<Order> => {
+  const response = await apiFetch('/orders', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(request),
+  });
+
+  if (!response.ok) {
+    throw await buildApiError(response, 'Failed to place order');
+  }
+
+  return (await response.json()) as Order;
+};
+
+export const getMyOrders = async (): Promise<OrderHistoryResponse> => {
+  const response = await apiFetch('/orders/mine');
+
+  if (!response.ok) {
+    throw await buildApiError(response, 'Failed to fetch order history');
+  }
+
+  return (await response.json()) as OrderHistoryResponse;
+};
+
+export const createProduct = async (request: ProductUpsertRequest): Promise<Product> => {
+  const response = await apiFetch('/products', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(request),
+  });
+
+  if (!response.ok) {
+    throw await buildApiError(response, 'Failed to create product');
+  }
+
+  return (await response.json()) as Product;
+};
+
+export const updateProduct = async (id: number, request: ProductUpsertRequest): Promise<Product> => {
+  const response = await apiFetch(`/products/${id}`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(request),
+  });
+
+  if (!response.ok) {
+    throw await buildApiError(response, 'Failed to update product');
+  }
+
+  return (await response.json()) as Product;
+};
+
+export const deleteProduct = async (id: number): Promise<void> => {
+  const response = await apiFetch(`/products/${id}`, {
+    method: 'DELETE',
+  });
+
+  if (!response.ok) {
+    throw await buildApiError(response, 'Failed to delete product');
+  }
+};
+
+export const getAllOrdersForAdmin = async (): Promise<OrderHistoryResponse> => {
+  const response = await apiFetch('/orders/admin');
+
+  if (!response.ok) {
+    throw await buildApiError(response, 'Failed to fetch all orders');
+  }
+
+  return (await response.json()) as OrderHistoryResponse;
+};
+
+export const updateOrderStatus = async (
+  orderId: number,
+  request: UpdateOrderStatusRequest,
+): Promise<Order> => {
+  const response = await apiFetch(`/orders/${orderId}/status`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(request),
+  });
+
+  if (!response.ok) {
+    throw await buildApiError(response, 'Failed to update order status');
+  }
+
+  return (await response.json()) as Order;
 };

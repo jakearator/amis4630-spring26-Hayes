@@ -100,6 +100,9 @@ const CartSummary: FC<CartSummaryProps> = ({
       </div>
 
       <div style={styles.summaryActions}>
+        <Link to="/checkout" style={styles.continueLink}>
+          <Button>Proceed to Checkout</Button>
+        </Link>
         <Link to="/products" style={styles.continueLink}>
           <Button>Continue Shopping</Button>
         </Link>

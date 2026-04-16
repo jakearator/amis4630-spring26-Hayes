@@ -1,12 +1,15 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using BuckeyeMarketplaceBackend.Data;
 using BuckeyeMarketplaceBackend.Models;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
 
 namespace BuckeyeMarketplaceBackend.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize]
     public class CartController : ControllerBase
     {
         private readonly MarketplaceDbContext _dbContext;
@@ -15,9 +18,6 @@ namespace BuckeyeMarketplaceBackend.Controllers
         {
             _dbContext = dbContext;
         }
-
-        // Temporary hardcoded user id until auth is added.
-        private const string HardcodedUserId = "user-123";
 
         // GET: api/cart
         [HttpGet]
@@ -105,7 +105,7 @@ namespace BuckeyeMarketplaceBackend.Controllers
             var item = await _dbContext.CartItems
                 .Include(i => i.Cart)
                 .Include(i => i.Product)
-                .FirstOrDefaultAsync(i => i.Id == cartItemId && i.Cart != null && i.Cart.UserId == HardcodedUserId);
+                .FirstOrDefaultAsync(i => i.Id == cartItemId && i.Cart != null && i.Cart.UserId == GetCurrentUserId());
 
             if (item == null)
             {
@@ -136,7 +136,7 @@ namespace BuckeyeMarketplaceBackend.Controllers
         {
             var item = await _dbContext.CartItems
                 .Include(i => i.Cart)
-                .FirstOrDefaultAsync(i => i.Id == cartItemId && i.Cart != null && i.Cart.UserId == HardcodedUserId);
+                .FirstOrDefaultAsync(i => i.Id == cartItemId && i.Cart != null && i.Cart.UserId == GetCurrentUserId());
 
             if (item == null)
             {
@@ -156,7 +156,7 @@ namespace BuckeyeMarketplaceBackend.Controllers
         {
             var cart = await _dbContext.Carts
                 .Include(c => c.Items)
-                .FirstOrDefaultAsync(c => c.UserId == HardcodedUserId);
+                .FirstOrDefaultAsync(c => c.UserId == GetCurrentUserId());
 
             if (cart == null)
             {
@@ -173,10 +173,12 @@ namespace BuckeyeMarketplaceBackend.Controllers
 
         private async Task<Cart> GetOrCreateCartAsync()
         {
+            var userId = GetCurrentUserId();
+
             var cart = await _dbContext.Carts
                 .Include(c => c.Items)
                     .ThenInclude(i => i.Product)
-                .FirstOrDefaultAsync(c => c.UserId == HardcodedUserId);
+                .FirstOrDefaultAsync(c => c.UserId == userId);
 
             if (cart != null)
             {
@@ -185,7 +187,7 @@ namespace BuckeyeMarketplaceBackend.Controllers
 
             cart = new Cart
             {
-                UserId = HardcodedUserId
+                UserId = userId
             };
 
             _dbContext.Carts.Add(cart);
@@ -195,6 +197,17 @@ namespace BuckeyeMarketplaceBackend.Controllers
                 .Include(c => c.Items)
                     .ThenInclude(i => i.Product)
                 .FirstAsync(c => c.Id == cart.Id);
+        }
+
+        private string GetCurrentUserId()
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrWhiteSpace(userId))
+            {
+                throw new InvalidOperationException("Authenticated user id was not found in JWT claims.");
+            }
+
+            return userId;
         }
     }
 }

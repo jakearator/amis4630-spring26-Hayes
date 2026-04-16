@@ -10,6 +10,7 @@ import {
 } from 'react';
 import { addCartItem, clearCart, getCart, removeCartItem, updateCartItemQuantity } from '../services/api';
 import { CartApiResponse, CartItem, Product } from '../types';
+import { useAuth } from './AuthContext';
 
 interface CartContextValue {
   items: CartItem[];
@@ -23,6 +24,7 @@ interface CartContextValue {
   updateItemQuantity: (productId: number, quantity: number) => Promise<void>;
   removeItem: (productId: number) => Promise<void>;
   clearCart: () => Promise<void>;
+  reloadCart: () => Promise<void>;
   clearCartMessages: () => void;
 }
 
@@ -42,6 +44,7 @@ interface CartProviderProps {
 }
 
 export const CartProvider: FC<CartProviderProps> = ({ children }) => {
+  const { isAuthenticated } = useAuth();
   const [items, setItems] = useState<CartItem[]>([]);
   const [isLoadingCart, setIsLoadingCart] = useState<boolean>(true);
   const [isMutatingCart, setIsMutatingCart] = useState<boolean>(false);
@@ -68,6 +71,14 @@ export const CartProvider: FC<CartProviderProps> = ({ children }) => {
 
   useEffect(() => {
     const loadCart = async () => {
+      if (!isAuthenticated) {
+        setItems([]);
+        setCartError(null);
+        setCartSuccess(null);
+        setIsLoadingCart(false);
+        return;
+      }
+
       setIsLoadingCart(true);
       setCartError(null);
 
@@ -81,7 +92,7 @@ export const CartProvider: FC<CartProviderProps> = ({ children }) => {
     };
 
     void loadCart();
-  }, [syncCart]);
+  }, [isAuthenticated, syncCart]);
 
   useEffect(() => {
     if (!cartSuccess) {
@@ -262,6 +273,7 @@ export const CartProvider: FC<CartProviderProps> = ({ children }) => {
       updateItemQuantity,
       removeItem,
       clearCart: clearCartItems,
+      reloadCart: syncCart,
       clearCartMessages,
     };
   }, [
@@ -273,6 +285,7 @@ export const CartProvider: FC<CartProviderProps> = ({ children }) => {
     isLoadingCart,
     isMutatingCart,
     items,
+    syncCart,
     removeItem,
     updateItemQuantity,
   ]);

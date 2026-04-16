@@ -2,10 +2,12 @@ import { FC, useState, CSSProperties } from 'react';
 import { Link } from 'react-router-dom';
 import ComingSoonModal from '../molecules/ComingSoonModal';
 import { useCart } from '../../context/CartContext';
+import { useAuth } from '../../context/AuthContext';
 
 const Header: FC = () => {
   const [showModal, setShowModal] = useState(false);
   const { itemCount } = useCart();
+  const { isAuthenticated, isAdmin, logout } = useAuth();
 
   const styles: Record<string, CSSProperties> = {
     header: {
@@ -59,6 +61,7 @@ const Header: FC = () => {
       display: 'flex',
       gap: '16px',
       minWidth: 'fit-content',
+      alignItems: 'center',
     },
     iconButton: {
       background: 'none',
@@ -73,6 +76,22 @@ const Header: FC = () => {
     },
     iconButtonHover: {
       color: '#BB0000',
+    },
+    authLink: {
+      color: '#444',
+      textDecoration: 'none',
+      fontSize: '14px',
+      fontWeight: '600',
+    },
+    logoutButton: {
+      border: 'none',
+      background: '#BB0000',
+      color: 'white',
+      borderRadius: '6px',
+      fontSize: '13px',
+      fontWeight: '700',
+      padding: '7px 10px',
+      cursor: 'pointer',
     },
     cartCountBadge: {
       position: 'absolute',
@@ -123,16 +142,52 @@ const Header: FC = () => {
             🛒
             {itemCount > 0 && <span style={styles.cartCountBadge}>{itemCount}</span>}
           </Link>
-          <button
-            style={styles.iconButton}
-            onClick={() => setShowModal(true)}
-            onMouseEnter={(e) => (e.currentTarget.style.color = styles.iconButtonHover.color as string)}
-            onMouseLeave={(e) => (e.currentTarget.style.color = 'gray')}
-            title="User Account"
-            aria-label="User Account"
-          >
-            👤
-          </button>
+          {isAuthenticated && (
+            <Link
+              to="/orders"
+              style={styles.iconButton}
+              onMouseEnter={(e) => (e.currentTarget.style.color = styles.iconButtonHover.color as string)}
+              onMouseLeave={(e) => (e.currentTarget.style.color = 'gray')}
+              title="Order History"
+              aria-label="Order History"
+            >
+              📦
+            </Link>
+          )}
+          {isAdmin && (
+            <Link
+              to="/admin"
+              style={styles.iconButton}
+              onMouseEnter={(e) => (e.currentTarget.style.color = styles.iconButtonHover.color as string)}
+              onMouseLeave={(e) => (e.currentTarget.style.color = 'gray')}
+              title="Admin Dashboard"
+              aria-label="Admin Dashboard"
+            >
+              🛠
+            </Link>
+          )}
+          {isAuthenticated ? (
+            <>
+              <button
+                style={styles.iconButton}
+                onClick={() => setShowModal(true)}
+                onMouseEnter={(e) => (e.currentTarget.style.color = styles.iconButtonHover.color as string)}
+                onMouseLeave={(e) => (e.currentTarget.style.color = 'gray')}
+                title="User Account"
+                aria-label="User Account"
+              >
+                👤
+              </button>
+              <button type="button" style={styles.logoutButton} onClick={logout}>
+                Logout
+              </button>
+            </>
+          ) : (
+            <>
+              <Link to="/login" style={styles.authLink}>Log In</Link>
+              <Link to="/register" style={styles.authLink}>Register</Link>
+            </>
+          )}
         </div>
       </div>
       {showModal && <ComingSoonModal onClose={() => setShowModal(false)} />}

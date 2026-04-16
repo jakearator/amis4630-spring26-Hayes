@@ -1,9 +1,10 @@
 using BuckeyeMarketplaceBackend.Models;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
 namespace BuckeyeMarketplaceBackend.Data
 {
-    public class MarketplaceDbContext : DbContext
+    public class MarketplaceDbContext : IdentityDbContext<ApplicationUser>
     {
         public MarketplaceDbContext(DbContextOptions<MarketplaceDbContext> options)
             : base(options)
@@ -13,6 +14,9 @@ namespace BuckeyeMarketplaceBackend.Data
         public DbSet<Product> Products => Set<Product>();
         public DbSet<Cart> Carts => Set<Cart>();
         public DbSet<CartItem> CartItems => Set<CartItem>();
+        public DbSet<Order> Orders => Set<Order>();
+        public DbSet<OrderItem> OrderItems => Set<OrderItem>();
+        public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -24,8 +28,23 @@ namespace BuckeyeMarketplaceBackend.Data
 
             modelBuilder.Entity<Cart>()
                 .Property(c => c.UserId)
-                .HasMaxLength(64)
+                .HasMaxLength(450)
                 .IsRequired();
+
+            modelBuilder.Entity<RefreshToken>()
+                .HasIndex(t => t.Token)
+                .IsUnique();
+
+            modelBuilder.Entity<RefreshToken>()
+                .Property(t => t.Token)
+                .HasMaxLength(200)
+                .IsRequired();
+
+            modelBuilder.Entity<RefreshToken>()
+                .HasOne(t => t.User)
+                .WithMany()
+                .HasForeignKey(t => t.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
 
             modelBuilder.Entity<Cart>()
                 .HasMany(c => c.Items)
@@ -42,6 +61,59 @@ namespace BuckeyeMarketplaceBackend.Data
             modelBuilder.Entity<CartItem>()
                 .Property(i => i.Quantity)
                 .IsRequired();
+
+            modelBuilder.Entity<Order>()
+                .Property(o => o.UserId)
+                .HasMaxLength(450)
+                .IsRequired();
+
+            modelBuilder.Entity<Order>()
+                .Property(o => o.Status)
+                .HasMaxLength(50)
+                .IsRequired();
+
+            modelBuilder.Entity<Order>()
+                .Property(o => o.ShippingAddress)
+                .HasMaxLength(500)
+                .IsRequired();
+
+            modelBuilder.Entity<Order>()
+                .Property(o => o.ConfirmationNumber)
+                .HasMaxLength(40)
+                .IsRequired();
+
+            modelBuilder.Entity<Order>()
+                .HasIndex(o => o.ConfirmationNumber)
+                .IsUnique();
+
+            modelBuilder.Entity<Order>()
+                .HasIndex(o => o.UserId);
+
+            modelBuilder.Entity<Order>()
+                .HasMany(o => o.Items)
+                .WithOne(i => i.Order)
+                .HasForeignKey(i => i.OrderId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<OrderItem>()
+                .Property(i => i.Quantity)
+                .IsRequired();
+
+            modelBuilder.Entity<OrderItem>()
+                .Property(i => i.UnitPrice)
+                .HasPrecision(18, 2)
+                .IsRequired();
+
+            modelBuilder.Entity<OrderItem>()
+                .Property(i => i.ProductTitle)
+                .HasMaxLength(200)
+                .IsRequired();
+
+            modelBuilder.Entity<OrderItem>()
+                .HasOne<Product>()
+                .WithMany()
+                .HasForeignKey(i => i.ProductId)
+                .OnDelete(DeleteBehavior.Restrict);
 
             modelBuilder.Entity<Product>().HasData(
                 new Product

@@ -3,6 +3,7 @@ using System;
 using BuckeyeMarketplaceBackend.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace BuckeyeMarketplaceBackend.Migrations
 {
     [DbContext(typeof(MarketplaceDbContext))]
-    partial class MarketplaceDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260415193245_AddIdentityAndAuth")]
+    partial class AddIdentityAndAuth
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "8.0.0");
@@ -122,81 +125,6 @@ namespace BuckeyeMarketplaceBackend.Migrations
                     b.HasIndex("ProductId");
 
                     b.ToTable("CartItems");
-                });
-
-            modelBuilder.Entity("BuckeyeMarketplaceBackend.Models.Order", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER");
-
-                    b.Property<string>("ConfirmationNumber")
-                        .IsRequired()
-                        .HasMaxLength(40)
-                        .HasColumnType("TEXT");
-
-                    b.Property<DateTime>("OrderDate")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("ShippingAddress")
-                        .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("TEXT");
-
-                    b.Property<decimal>("Total")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("UserId")
-                        .IsRequired()
-                        .HasMaxLength(450)
-                        .HasColumnType("TEXT");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ConfirmationNumber")
-                        .IsUnique();
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("Orders");
-                });
-
-            modelBuilder.Entity("BuckeyeMarketplaceBackend.Models.OrderItem", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER");
-
-                    b.Property<int>("OrderId")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<int>("ProductId")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<string>("ProductTitle")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("TEXT");
-
-                    b.Property<int>("Quantity")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<decimal>("UnitPrice")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("TEXT");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("OrderId");
-
-                    b.HasIndex("ProductId");
-
-                    b.ToTable("OrderItems");
                 });
 
             modelBuilder.Entity("BuckeyeMarketplaceBackend.Models.Product", b =>
@@ -524,23 +452,6 @@ namespace BuckeyeMarketplaceBackend.Migrations
                     b.Navigation("Product");
                 });
 
-            modelBuilder.Entity("BuckeyeMarketplaceBackend.Models.OrderItem", b =>
-                {
-                    b.HasOne("BuckeyeMarketplaceBackend.Models.Order", "Order")
-                        .WithMany("Items")
-                        .HasForeignKey("OrderId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("BuckeyeMarketplaceBackend.Models.Product", null)
-                        .WithMany()
-                        .HasForeignKey("ProductId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("Order");
-                });
-
             modelBuilder.Entity("BuckeyeMarketplaceBackend.Models.RefreshToken", b =>
                 {
                     b.HasOne("BuckeyeMarketplaceBackend.Models.ApplicationUser", "User")
@@ -604,11 +515,6 @@ namespace BuckeyeMarketplaceBackend.Migrations
                 });
 
             modelBuilder.Entity("BuckeyeMarketplaceBackend.Models.Cart", b =>
-                {
-                    b.Navigation("Items");
-                });
-
-            modelBuilder.Entity("BuckeyeMarketplaceBackend.Models.Order", b =>
                 {
                     b.Navigation("Items");
                 });
