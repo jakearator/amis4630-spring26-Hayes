@@ -19,7 +19,7 @@ namespace BuckeyeMarketplaceBackend.Migrations
                 {
                     Id = table.Column<int>(type: "INTEGER", nullable: false)
                         .Annotation("Sqlite:Autoincrement", true),
-                    UserId = table.Column<string>(type: "TEXT", maxLength: 64, nullable: false)
+                    UserId = table.Column<string>(type: "nvarchar(450)", maxLength: 450, nullable: false)
                 },
                 constraints: table =>
                 {
@@ -34,10 +34,10 @@ namespace BuckeyeMarketplaceBackend.Migrations
                         .Annotation("Sqlite:Autoincrement", true),
                     Title = table.Column<string>(type: "TEXT", nullable: true),
                     Description = table.Column<string>(type: "TEXT", nullable: true),
-                    Price = table.Column<decimal>(type: "TEXT", nullable: false),
+                    Price = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     Category = table.Column<string>(type: "TEXT", nullable: true),
                     Brand = table.Column<string>(type: "TEXT", nullable: true),
-                    PostedDate = table.Column<DateTime>(type: "TEXT", nullable: false),
+                    PostedDate = table.Column<DateTime>(type: "datetime2", nullable: false),
                     ImageUrl = table.Column<string>(type: "TEXT", nullable: true)
                 },
                 constraints: table =>

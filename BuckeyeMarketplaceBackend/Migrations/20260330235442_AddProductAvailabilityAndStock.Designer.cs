@@ -28,8 +28,8 @@ namespace BuckeyeMarketplaceBackend.Migrations
 
                     b.Property<string>("UserId")
                         .IsRequired()
-                        .HasMaxLength(64)
-                        .HasColumnType("TEXT");
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
 
                     b.HasKey("Id");
 
@@ -85,10 +85,10 @@ namespace BuckeyeMarketplaceBackend.Migrations
                         .HasColumnType("INTEGER");
 
                     b.Property<DateTime>("PostedDate")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("datetime2");
 
                     b.Property<decimal>("Price")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("decimal(18,2)");
 
                     b.Property<int>("StockQuantity")
                         .HasColumnType("INTEGER");

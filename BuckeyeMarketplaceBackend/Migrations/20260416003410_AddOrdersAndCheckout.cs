@@ -18,9 +18,9 @@ namespace BuckeyeMarketplaceBackend.Migrations
                     Id = table.Column<int>(type: "INTEGER", nullable: false)
                         .Annotation("Sqlite:Autoincrement", true),
                     UserId = table.Column<string>(type: "TEXT", maxLength: 450, nullable: false),
-                    OrderDate = table.Column<DateTime>(type: "TEXT", nullable: false),
+                    OrderDate = table.Column<DateTime>(type: "datetime2", nullable: false),
                     Status = table.Column<string>(type: "TEXT", maxLength: 50, nullable: false),
-                    Total = table.Column<decimal>(type: "TEXT", nullable: false),
+                    Total = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     ShippingAddress = table.Column<string>(type: "TEXT", maxLength: 500, nullable: false),
                     ConfirmationNumber = table.Column<string>(type: "TEXT", maxLength: 40, nullable: false)
                 },
@@ -38,7 +38,7 @@ namespace BuckeyeMarketplaceBackend.Migrations
                     OrderId = table.Column<int>(type: "INTEGER", nullable: false),
                     ProductId = table.Column<int>(type: "INTEGER", nullable: false),
                     Quantity = table.Column<int>(type: "INTEGER", nullable: false),
-                    UnitPrice = table.Column<decimal>(type: "TEXT", precision: 18, scale: 2, nullable: false),
+                    UnitPrice = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
                     ProductTitle = table.Column<string>(type: "TEXT", maxLength: 200, nullable: false)
                 },
                 constraints: table =>
