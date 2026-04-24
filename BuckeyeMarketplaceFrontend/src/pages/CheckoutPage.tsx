@@ -245,7 +245,7 @@ const CheckoutPage: FC = () => {
     );
   }
 
-  const loginState = {
+  const authRedirectState = {
     from: {
       pathname: location.pathname,
     },
@@ -264,8 +264,11 @@ const CheckoutPage: FC = () => {
               You can sign in to use your account, or continue with guest checkout and place this order without logging in.
             </p>
             <div style={styles.choiceActions}>
-              <Link to="/login" state={loginState} style={styles.linkButton}>
+              <Link to="/login" state={authRedirectState} style={styles.linkButton}>
                 <Button type="button">Log In</Button>
+              </Link>
+              <Link to="/register" state={authRedirectState} style={styles.linkButton}>
+                <Button type="button">Create Account</Button>
               </Link>
               <Button type="button" onClick={() => setCheckoutMode('guest')}>
                 Checkout as Guest

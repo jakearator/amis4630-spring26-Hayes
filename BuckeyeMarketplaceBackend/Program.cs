@@ -2,7 +2,9 @@ using BuckeyeMarketplaceBackend.Data;
 using BuckeyeMarketplaceBackend.Models;
 using BuckeyeMarketplaceBackend.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
@@ -13,7 +15,27 @@ using System.Security.Cryptography;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container
-builder.Services.AddControllers();
+builder.Services
+    .AddControllers()
+    .ConfigureApiBehaviorOptions(options =>
+    {
+        options.InvalidModelStateResponseFactory = context =>
+        {
+            var errors = context.ModelState
+                .Where(entry => entry.Value?.Errors.Count > 0)
+                .ToDictionary(
+                    entry => entry.Key,
+                    entry => entry.Value!.Errors
+                        .Select(error => string.IsNullOrWhiteSpace(error.ErrorMessage) ? "Invalid value." : error.ErrorMessage)
+                        .ToArray());
+
+            return new BadRequestObjectResult(new
+            {
+                message = "Please correct the highlighted fields and try again.",
+                errors
+            });
+        };
+    });
 builder.Services.AddDbContext<MarketplaceDbContext>(options =>
 {
     var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
@@ -157,11 +179,33 @@ builder.Services.AddSwaggerGen(options =>
 
 var app = builder.Build();
 
+app.UseExceptionHandler(errorApp =>
+{
+    errorApp.Run(async context =>
+    {
+        var exceptionFeature = context.Features.Get<IExceptionHandlerFeature>();
+        if (exceptionFeature?.Error != null)
+        {
+            app.Logger.LogError(exceptionFeature.Error, "Unhandled request failure.");
+        }
+
+        context.Response.StatusCode = StatusCodes.Status500InternalServerError;
+        context.Response.ContentType = "application/json";
+
+        await context.Response.WriteAsJsonAsync(new
+        {
+            message = "Something went wrong while processing your request. Please try again.",
+            traceId = context.TraceIdentifier
+        });
+    });
+});
+
 using (var scope = app.Services.CreateScope())
 {
     var dbContext = scope.ServiceProvider.GetRequiredService<MarketplaceDbContext>();
     var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
     var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
+    var configuration = scope.ServiceProvider.GetRequiredService<IConfiguration>();
 
     if (dbContext.Database.IsRelational())
     {
@@ -172,35 +216,42 @@ using (var scope = app.Services.CreateScope())
         dbContext.Database.EnsureCreated();
     }
 
-    const string adminEmail = "admin@buckeyemarketplace.local";
-    const string adminPassword = "Admin1234";
+    var adminEmail = configuration["SeedAdmin:Email"]?.Trim().ToLowerInvariant();
+    var adminPassword = configuration["SeedAdmin:Password"];
 
-    if (!await roleManager.RoleExistsAsync(adminRole))
+    if (!string.IsNullOrWhiteSpace(adminEmail) && !string.IsNullOrWhiteSpace(adminPassword))
     {
-        await roleManager.CreateAsync(new IdentityRole(adminRole));
-    }
-
-    var adminUser = await userManager.FindByEmailAsync(adminEmail);
-    if (adminUser == null)
-    {
-        adminUser = new ApplicationUser
+        if (!await roleManager.RoleExistsAsync(adminRole))
         {
-            UserName = adminEmail,
-            Email = adminEmail,
-            EmailConfirmed = true
-        };
+            await roleManager.CreateAsync(new IdentityRole(adminRole));
+        }
 
-        var createResult = await userManager.CreateAsync(adminUser, adminPassword);
-        if (!createResult.Succeeded)
+        var adminUser = await userManager.FindByEmailAsync(adminEmail);
+        if (adminUser == null)
         {
-            var errors = string.Join(", ", createResult.Errors.Select(e => e.Description));
-            throw new InvalidOperationException($"Admin seed failed: {errors}");
+            adminUser = new ApplicationUser
+            {
+                UserName = adminEmail,
+                Email = adminEmail,
+                EmailConfirmed = true
+            };
+
+            var createResult = await userManager.CreateAsync(adminUser, adminPassword);
+            if (!createResult.Succeeded)
+            {
+                var errors = string.Join(", ", createResult.Errors.Select(e => e.Description));
+                throw new InvalidOperationException($"Admin seed failed: {errors}");
+            }
+        }
+
+        if (!await userManager.IsInRoleAsync(adminUser, adminRole))
+        {
+            await userManager.AddToRoleAsync(adminUser, adminRole);
         }
     }
-
-    if (!await userManager.IsInRoleAsync(adminUser, adminRole))
+    else
     {
-        await userManager.AddToRoleAsync(adminUser, adminRole);
+        app.Logger.LogInformation("Admin seed skipped. Configure SeedAdmin:Email and SeedAdmin:Password outside source control if needed.");
     }
 }
 

@@ -46,6 +46,10 @@ pnpm-debug.log*
 # Vite / TS local files
 **/*.tsbuildinfo
 *.local
+**/.env
+**/.env.*
+!**/.env.example
+!**/.env.*.example
 
 publish/
 deploy.zip

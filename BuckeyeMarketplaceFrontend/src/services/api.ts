@@ -47,6 +47,16 @@ const apiFetch = async (input: string, init?: RequestInit): Promise<Response> =>
   return response;
 };
 
+const extractValidationMessages = (errors: unknown): string[] => {
+  if (!errors || typeof errors !== 'object') {
+    return [];
+  }
+
+  return Object.values(errors)
+    .flatMap((value) => (Array.isArray(value) ? value : []))
+    .filter((message): message is string => typeof message === 'string' && message.trim().length > 0);
+};
+
 const buildApiError = async (response: Response, fallback: string): Promise<Error> => {
   let message = '';
 
@@ -56,12 +66,24 @@ const buildApiError = async (response: Response, fallback: string): Promise<Erro
     if (contentType.includes('application/json')) {
       const payload = await response.json() as
         | string
-        | { message?: string; detail?: string; title?: string };
+        | string[]
+        | { message?: string; detail?: string; title?: string; errors?: unknown };
 
       if (typeof payload === 'string') {
         message = payload;
+      } else if (Array.isArray(payload)) {
+        message = payload.filter((item) => typeof item === 'string' && item.trim().length > 0).join(' ');
       } else {
-        message = payload.message ?? payload.detail ?? payload.title ?? '';
+        const validationMessages = extractValidationMessages(payload.errors);
+        const primaryMessage = payload.message ?? payload.detail ?? payload.title ?? '';
+
+        if (primaryMessage && validationMessages.length > 0) {
+          message = `${primaryMessage} ${validationMessages.join(' ')}`;
+        } else if (validationMessages.length > 0) {
+          message = validationMessages.join(' ');
+        } else {
+          message = primaryMessage;
+        }
       }
     } else {
       message = (await response.text()).trim();

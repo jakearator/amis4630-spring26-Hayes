@@ -1,5 +1,5 @@
 import { CSSProperties, FC, FormEvent, useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { validateRegisterForm } from '../utils/authValidation';
 
@@ -12,6 +12,7 @@ const RegisterPage: FC = () => {
 
   const { isAuthenticated, authError, clearAuthError, registerUser } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const styles: Record<string, CSSProperties> = {
     page: {
@@ -106,9 +107,11 @@ const RegisterPage: FC = () => {
 
   useEffect(() => {
     if (isAuthenticated) {
-      navigate('/products', { replace: true });
+      const navigationState = location.state as { from?: { pathname?: string } } | null;
+      const destination = navigationState?.from?.pathname ?? '/products';
+      navigate(destination, { replace: true });
     }
-  }, [isAuthenticated, navigate]);
+  }, [isAuthenticated, location.state, navigate]);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>): Promise<void> => {
     event.preventDefault();

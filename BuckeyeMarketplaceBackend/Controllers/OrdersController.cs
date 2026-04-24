@@ -46,13 +46,16 @@ namespace BuckeyeMarketplaceBackend.Controllers
             }
 
             var userId = TryGetCurrentUserId();
-            var customerEmail = ResolveCustomerEmail(request.CustomerEmail);
-            if (customerEmail == null && userId == null)
+            var customerEmail = userId != null
+                ? TryGetCurrentUserEmail() ?? ResolveCustomerEmail(request.CustomerEmail)
+                : ResolveCustomerEmail(request.CustomerEmail);
+
+            if (userId == null && customerEmail == null)
             {
                 return BadRequest("Email is required for guest checkout.");
             }
 
-            if (!string.IsNullOrWhiteSpace(request.CustomerEmail) && customerEmail == null)
+            if (userId == null && !string.IsNullOrWhiteSpace(request.CustomerEmail) && customerEmail == null)
             {
                 return BadRequest("A valid email address is required.");
             }
@@ -73,6 +76,11 @@ namespace BuckeyeMarketplaceBackend.Controllers
 
                 foreach (var cartItem in cart.Items)
                 {
+                    if (cartItem.Quantity <= 0)
+                    {
+                        return Conflict("Your cart contains an invalid quantity. Update your cart and try again.");
+                    }
+
                     if (cartItem.Product == null)
                     {
                         return NotFound($"Product with id {cartItem.ProductId} was not found.");
@@ -111,8 +119,13 @@ namespace BuckeyeMarketplaceBackend.Controllers
             }
             else
             {
-                var normalizedItems = request.Items
-                    .Where(item => item.ProductId > 0 && item.Quantity > 0)
+                var requestedItems = request.Items ?? new List<PlaceOrderItemRequest>();
+                if (requestedItems.Count == 0)
+                {
+                    return BadRequest("Your cart is empty. Add items before placing an order.");
+                }
+
+                var normalizedItems = requestedItems
                     .GroupBy(item => item.ProductId)
                     .Select(group => new PlaceOrderItemRequest
                     {
@@ -120,16 +133,6 @@ namespace BuckeyeMarketplaceBackend.Controllers
                         Quantity = group.Sum(item => item.Quantity)
                     })
                     .ToList();
-
-                if (normalizedItems.Count == 0)
-                {
-                    return BadRequest("Your cart is empty. Add items before placing an order.");
-                }
-
-                if (normalizedItems.Count != request.Items.Count)
-                {
-                    return BadRequest("Each order item must include a valid product id and quantity.");
-                }
 
                 var requestedProductIds = normalizedItems.Select(item => item.ProductId).ToList();
                 var products = await _dbContext.Products
