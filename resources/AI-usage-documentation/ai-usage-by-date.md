@@ -1189,3 +1189,96 @@ it is the most practical option when the Azure SQL database is resettable
 If you want, the next step can be a precise execution plan for that baseline reset and regeneration sequence, but I won’t change files until you say to proceed.
 
 # (4/23/2026) doing clean upload again, deleting all previous migrations in IDE
+
+# (4/23/2026) BEEN AT THIS FOR A MINUTE NOW.... BACKEND IS OFFICIALLY WORKING...! Doing the error changes one-by-one was a mistake as the migration was always going to keep using SQLITE so I made a script to remake gatorade (the server for Azure) and delete previous migrations, and adjusted it accordingly so it actually used non-sqlite stuff. 
+
+# (4/23/2026) changing the link in the frontend from localhost:#### to my official link... moment of truth.... 
+
+prompt for that:
+
+You are working in the BuckeyeMarketplaceFrontend (React + Vite).
+
+CRITICAL RULES:
+
+* Do NOT change UI layout, styling, or component structure
+* Do NOT modify business logic beyond API base URL usage
+* Do NOT remove existing functionality
+* Only update API configuration to point to production backend safely
+
+Context:
+
+* Backend is deployed at:
+  https://buckeyemarketplace-api-jake1293-wus3.azurewebsites.net
+* Frontend currently calls localhost (development API)
+* We want frontend to use production API
+
+Your tasks:
+
+1. Locate the API base configuration:
+
+   * Likely file: src/services/api.ts (or similar)
+
+2. Refactor API base URL to use environment variables:
+
+   * Use:
+     import.meta.env.VITE_API_URL
+
+3. Update code:
+   BEFORE (example):
+   const API_BASE = "http://localhost:5000";
+
+   AFTER:
+   const API_BASE = import.meta.env.VITE_API_URL;
+
+4. Ensure all API calls use this base variable consistently
+
+5. Create/update environment files:
+
+   * .env (for local dev):
+     VITE_API_URL=http://localhost:5000
+
+   * .env.production:
+     VITE_API_URL=https://buckeyemarketplace-api-jake1293-wus3.azurewebsites.net
+
+6. Do NOT hardcode URLs directly in components
+
+7. Verify:
+
+   * No TypeScript errors
+   * No broken imports
+   * API calls still function
+
+8. Output:
+
+   * Files modified
+   * Confirmation API_BASE uses env variable
+   * Confirmation env files created/updated
+
+Goal:
+Make frontend environment-aware so it can switch between local and Azure backend cleanly without breaking existing functionality.
+
+answer from prompt: 
+
+Updated the frontend API configuration in src/services/api.ts (line 17) so API_BASE_URL now derives from import.meta.env.VITE_API_URL, while safely normalizing the host to /api. That keeps every existing call site unchanged, since all requests still go through the shared apiFetch helper at api.ts (line 37). No UI, layout, or component structure was changed.
+
+Files modified:
+
+src/services/api.ts (line 17)
+.env (line 1)
+.env.production (line 1)
+.env.production.example (line 1)
+Confirmation:
+
+API_BASE_URL uses import.meta.env.VITE_API_URL.
+.env created with VITE_API_URL=http://localhost:5000.
+.env.production created with VITE_API_URL=https://buckeyemarketplace-api-jake1293-wus3.azurewebsites.net.
+All API calls remain centralized through the same base variable; no components were given hardcoded backend URLs.
+Verification:
+
+npm run build passed successfully.
+Focused TypeScript check for the API service passed.
+Full-project tsc --noEmit still reports one unrelated pre-existing test issue at src/tests/LoginPage.test.tsx (line 20): beforeEach is not currently typed/imported there.
+
+# (4/23/2026) I BELIEVE WE ARE UP AND RUNNING FRONTEND/BACKEND/AZURE... WOoo!
+
+# (4/23/2026) LINK TO WEBSITE: 

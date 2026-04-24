@@ -16,7 +16,7 @@ import { getAccessToken } from './authStorage';
 
 const configuredApiBaseUrl = import.meta.env.VITE_API_URL?.trim();
 const API_BASE_URL = (configuredApiBaseUrl && configuredApiBaseUrl.length > 0
-  ? configuredApiBaseUrl
+  ? `${configuredApiBaseUrl.replace(/\/+$/, '').replace(/\/api$/, '')}/api`
   : 'http://localhost:5000/api').replace(/\/+$/, '');
 
 if (import.meta.env.PROD && !configuredApiBaseUrl) {
