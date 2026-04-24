@@ -1,0 +1,54 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "location": {
+      "value": "westus3"
+    },
+    "appServicePlanName": {
+      "value": "asp-buckeye-wus3-student"
+    },
+    "backendWebAppName": {
+      "value": "buckeyemarketplace-api-jake1293-wus3"
+    },
+    "appServicePlanSkuName": {
+      "value": "B1"
+    },
+    "appServicePlanSkuCapacity": {
+      "value": 1
+    },
+    "createSqlResources": {
+      "value": false
+    },
+    "sqlServerName": {
+      "value": "jake-1293"
+    },
+    "sqlDatabaseName": {
+      "value": "Gatorade"
+    },
+    "sqlAdminLogin": {
+      "value": ""
+    },
+    "sqlAdminPassword": {
+      "value": ""
+    },
+    "sqlDatabaseSkuName": {
+      "value": "Basic"
+    },
+    "corsAllowedOrigins": {
+      "value": []
+    },
+    "jwtIssuer": {
+      "value": "BuckeyeMarketplace"
+    },
+    "jwtAudience": {
+      "value": "BuckeyeMarketplaceClient"
+    },
+    "jwtKey": {
+      "value": ""
+    },
+    "defaultConnectionString": {
+      "value": ""
+    }
+  }
+}

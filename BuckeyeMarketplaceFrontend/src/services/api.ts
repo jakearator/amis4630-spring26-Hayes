@@ -14,7 +14,14 @@ import {
 } from '../types';
 import { getAccessToken } from './authStorage';
 
-const API_BASE_URL = 'http://localhost:5000/api';
+const configuredApiBaseUrl = import.meta.env.VITE_API_URL?.trim();
+const API_BASE_URL = (configuredApiBaseUrl && configuredApiBaseUrl.length > 0
+  ? `${configuredApiBaseUrl.replace(/\/+$/, '').replace(/\/api$/, '')}/api`
+  : 'http://localhost:5000/api').replace(/\/+$/, '');
+
+if (import.meta.env.PROD && !configuredApiBaseUrl) {
+  console.warn('VITE_API_URL is not set. Configure it for production builds.');
+}
 
 const buildHeaders = (headers?: HeadersInit): Headers => {
   const mergedHeaders = new Headers(headers);

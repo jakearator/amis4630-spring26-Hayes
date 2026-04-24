@@ -1,4 +1,5 @@
 using BuckeyeMarketplaceBackend.Models;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
@@ -22,6 +23,52 @@ namespace BuckeyeMarketplaceBackend.Data
         {
             base.OnModelCreating(modelBuilder);
 
+            modelBuilder.Entity<ApplicationUser>(b =>
+            {
+                b.Property(u => u.Id).HasColumnType("nvarchar(450)");
+                b.Property(u => u.UserName).HasMaxLength(256).HasColumnType("nvarchar(256)");
+                b.Property(u => u.NormalizedUserName).HasMaxLength(256).HasColumnType("nvarchar(256)");
+                b.Property(u => u.Email).HasMaxLength(256).HasColumnType("nvarchar(256)");
+                b.Property(u => u.NormalizedEmail).HasMaxLength(256).HasColumnType("nvarchar(256)");
+            });
+
+            modelBuilder.Entity<IdentityRole>(b =>
+            {
+                b.Property(r => r.Id).HasColumnType("nvarchar(450)");
+                b.Property(r => r.Name).HasMaxLength(256).HasColumnType("nvarchar(256)");
+                b.Property(r => r.NormalizedName).HasMaxLength(256).HasColumnType("nvarchar(256)");
+            });
+
+            modelBuilder.Entity<IdentityUserClaim<string>>(b =>
+            {
+                b.Property(c => c.UserId).HasColumnType("nvarchar(450)");
+            });
+
+            modelBuilder.Entity<IdentityRoleClaim<string>>(b =>
+            {
+                b.Property(c => c.RoleId).HasColumnType("nvarchar(450)");
+            });
+
+            modelBuilder.Entity<IdentityUserRole<string>>(b =>
+            {
+                b.Property(ur => ur.UserId).HasColumnType("nvarchar(450)");
+                b.Property(ur => ur.RoleId).HasColumnType("nvarchar(450)");
+            });
+
+            modelBuilder.Entity<IdentityUserLogin<string>>(b =>
+            {
+                b.Property(l => l.LoginProvider).HasMaxLength(128).HasColumnType("nvarchar(128)");
+                b.Property(l => l.ProviderKey).HasMaxLength(128).HasColumnType("nvarchar(128)");
+                b.Property(l => l.UserId).HasColumnType("nvarchar(450)");
+            });
+
+            modelBuilder.Entity<IdentityUserToken<string>>(b =>
+            {
+                b.Property(t => t.UserId).HasColumnType("nvarchar(450)");
+                b.Property(t => t.LoginProvider).HasMaxLength(128).HasColumnType("nvarchar(128)");
+                b.Property(t => t.Name).HasMaxLength(128).HasColumnType("nvarchar(128)");
+            });
+
             modelBuilder.Entity<Cart>()
                 .HasIndex(c => c.UserId)
                 .IsUnique();
@@ -29,6 +76,7 @@ namespace BuckeyeMarketplaceBackend.Data
             modelBuilder.Entity<Cart>()
                 .Property(c => c.UserId)
                 .HasMaxLength(450)
+                .HasColumnType("nvarchar(450)")
                 .IsRequired();
 
             modelBuilder.Entity<RefreshToken>()
@@ -73,6 +121,11 @@ namespace BuckeyeMarketplaceBackend.Data
                 .IsRequired();
 
             modelBuilder.Entity<Order>()
+                .Property(o => o.Total)
+                .HasColumnType("decimal(18,2)")
+                .IsRequired();
+
+            modelBuilder.Entity<Order>()
                 .Property(o => o.ShippingAddress)
                 .HasMaxLength(500)
                 .IsRequired();
@@ -101,7 +154,7 @@ namespace BuckeyeMarketplaceBackend.Data
 
             modelBuilder.Entity<OrderItem>()
                 .Property(i => i.UnitPrice)
-                .HasPrecision(18, 2)
+                .HasColumnType("decimal(18,2)")
                 .IsRequired();
 
             modelBuilder.Entity<OrderItem>()
@@ -114,6 +167,11 @@ namespace BuckeyeMarketplaceBackend.Data
                 .WithMany()
                 .HasForeignKey(i => i.ProductId)
                 .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<Product>()
+                .Property(p => p.Price)
+                .HasColumnType("decimal(18,2)")
+                .IsRequired();
 
             modelBuilder.Entity<Product>().HasData(
                 new Product

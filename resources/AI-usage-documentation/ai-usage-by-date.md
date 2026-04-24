@@ -495,3 +495,790 @@ untrack-artifacts.ps1
 package.json
 README.md
 You are now at 5/5 for the items, including fixes recorded in commit messages and changelog coverage.
+
+# (4/23/2026) SETTING UP BICEP / GETTING FRONTEND AND BACKEND READY TO MERGE WITH AZURE CLOUD INFRASTRUCTURE
+
+Repository scan was completed first, then I applied minimal safe setup changes for Azure readiness without deploying anything.
+
+What I changed
+
+Added Infrastructure as Code scaffolding with Bicep at repo root:
+main.bicep
+main.parameters.json
+Added GitHub workflows folder scaffolding (no deployment pipeline added):
+README.md
+Updated backend for Azure-friendly configuration while preserving local behavior:
+Added SQL Server EF provider package in BuckeyeMarketplaceBackend.csproj
+Updated DB provider selection and CORS app-setting support in Program.cs
+Updated frontend to support environment-based API URL:
+Replaced hardcoded API base URL with VITE_API_URL support in api.ts
+Added Vite env typing file vite-env.d.ts
+Added production env template .env.production.example
+Added env ignore rules in .gitignore
+Backend verification (Azure readiness)
+
+DefaultConnection is used from configuration in Program.cs.
+JWT settings are read from configuration/environment keys (Jwt:Key, Jwt:Issuer, Jwt:Audience) in Program.cs.
+No production secrets were added to appsettings.json.
+Startup now supports SQL Server connection strings for Azure and keeps SQLite fallback for local.
+Frontend verification
+
+VITE_API_URL is now supported in api.ts.
+.env.production pattern is provided via .env.production.example.
+Hardcoded localhost is no longer the only API mechanism.
+Exact files created
+
+main.bicep
+main.parameters.json
+README.md
+.env.production.example
+vite-env.d.ts
+Exact files updated
+
+BuckeyeMarketplaceBackend.csproj
+Program.cs
+api.ts
+.gitignore
+Validation run
+
+Backend build passed: dotnet restore + dotnet build
+Frontend build passed: npm run build
+Bicep template compiled successfully via Azure CLI bicep build
+Manual Azure steps still needed
+
+Fill placeholders in main.parameters.json:
+appServicePlanName
+backendWebAppName
+corsAllowedOrigins value for your frontend host
+keep sqlServerName as jake-1293 and sqlDatabaseName as Gatorade (already set)
+In Azure App Service Configuration for backend, set runtime settings (not in source control):
+ConnectionStrings__DefaultConnection (or equivalent App Service connection string for DefaultConnection)
+Jwt__Key
+Jwt__Issuer
+Jwt__Audience
+CORS__AllowedOrigins
+Optional: Database__Provider = SqlServer (helpful explicit override)
+Ensure Azure SQL firewall/networking allows backend access.
+
+For frontend production environment, create a real .env.production from .env.production.example in your deployment pipeline or hosting config (with VITE_API_URL pointing to deployed backend URL).
+
+Files to review before committing
+
+main.bicep
+main.parameters.json
+Program.cs
+BuckeyeMarketplaceBackend.csproj
+api.ts
+.env.production.example
+.gitignore
+README.md
+Potential follow-up hardening you may want next: remove or externalize the seeded admin password currently present in Program.cs:156 before production release.
+
+# example prompts of prep working for this: 
+
+"Now review the non-SQL parts of `infra/main.bicep`.
+
+I need you to explain:
+
+1. What App Service resources this template will create
+2. What parameters I still need to fill in for the backend deployment
+3. What app settings are being added to the backend web app
+4. Whether CORS is handled in Bicep, in code, or both
+5. Whether anything in this template could conflict with my existing Azure setup
+6. Whether this Bicep is ready for deployment if my SQL server `jake-1293` and database `Gatorade` are in the same resource group
+
+Do not make changes yet.
+Just explain clearly in student-friendly terms."
+
+I’ve finished reading the template and backend startup code. Next I’ll synthesize this into the six specific answers, including deployment-readiness for your existing SQL server/database and potential Azure conflicts.
+
+What App Service resources this template will create
+It creates two non-SQL Azure Web resources:
+
+One Linux App Service Plan (compute container for web apps), using your chosen SKU and capacity. See main.bicep:112, main.bicep:115.
+One Linux Web App for the backend API, attached to that plan, with:
+System-assigned managed identity
+HTTPS-only
+.NET 8 runtime
+FTPS disabled
+TLS 1.2 minimum
+HTTP/2 enabled
+Always On enabled for S1/P1v3, disabled on B1
+See main.bicep:126, main.bicep:129, main.bicep:135, main.bicep:137-141.
+What parameters you still need to fill in for backend deployment
+From your parameter file, these still need real values:
+
+App Service plan name placeholder: main.parameters.json:9
+Backend web app name placeholder: main.parameters.json:12
+Frontend origin placeholder in CORS list: main.parameters.json:40
+Also important for a working backend:
+
+JWT key is currently empty: main.parameters.json:49
+Your app throws startup error if Jwt:Key is missing: Program.cs:50-51
+
+Default SQL connection string is currently empty: main.parameters.json:52
+If left empty, backend falls back to local SQLite file, not Azure SQL: Program.cs:19-20
+
+What app settings are being added to the backend web app
+
+Always added:
+
+ASPNETCORE_ENVIRONMENT = Production
+Jwt__Issuer = from parameter
+Jwt__Audience = from parameter
+CORS__AllowedOrigins = comma-joined list from corsAllowedOrigins
+See main.bicep:64-77
+Conditionally added:
+
+Jwt__Key only if jwtKey is non-empty: main.bicep:80-87
+
+ConnectionStrings__DefaultConnection only if defaultConnectionString is non-empty: main.bicep:90-97
+
+Sql__ExistingServerName and Sql__ExistingDatabaseName when createSqlResources is false and names are provided: main.bicep:60, main.bicep:100-108
+
+Whether CORS is handled in Bicep, in code, or both
+
+Both.
+
+Bicep provides configuration value via app setting CORS__AllowedOrigins: main.bicep:76-77
+Backend code actually enforces CORS policy, reading CORS:AllowedOrigins and applying UseCors middleware: Program.cs:114-124, Program.cs:230
+If no origin is configured, code defaults to localhost:5173 for development behavior: Program.cs:119-123.
+
+Whether anything in this template could conflict with existing Azure setup
+Main risks:
+
+Backend web app name must be globally unique in Azure App Service. Placeholder replacement must use an unused name.
+
+If a Web App or App Service Plan with the same name already exists, this template updates it. That can change runtime/security settings (Linux/.NET 8, HTTPS-only, FTPS disabled, TLS 1.2, alwaysOn). See main.bicep:135-141.
+
+Plan is explicitly Linux/reserved. If an existing plan with same name is Windows, deployment can fail or conflict. See main.bicep:115, main.bicep:123.
+
+Location mismatch can fail updates if existing resources are in a different region than your parameter value. See main.parameters.json:6.
+
+App settings in deployment may overwrite existing settings on that web app, depending on current state and deployment mode, so watch for accidental config loss.
+
+Whether this is ready for deployment with SQL server jake-1293 and database Gatorade in same resource group
+
+Short answer: almost, but not fully ready for a working SQL-backed backend yet.
+
+What is already aligned:
+
+createSqlResources is false (correct for existing SQL): main.parameters.json:20
+sqlServerName and sqlDatabaseName are set to jake-1293 and Gatorade: main.parameters.json:23-27
+Template scope is resource group, so same-RG assumption matches design: main.bicep:1
+What still blocks a fully working backend deployment:
+
+jwtKey is empty, and backend requires it at startup.
+defaultConnectionString is empty, so backend will not connect to Azure SQL unless you set it.
+So: infra deployment can run, but backend app readiness for real SQL use requires setting Jwt key and SQL connection string (in parameters, Key Vault, or App Service Configuration).
+
+# (4/23/2026) running into windows/linux mix-up errors 
+
+prompt used:
+
+Do not edit application code yet.
+
+I have a Linux Azure App Service deployment failure. The Kudu/OneDeploy log shows rsync failing on Windows-style backslash paths under /home/site/wwwroot, such as runtimes\\win-arm\\native\\..., with Invalid argument (22).
+
+Your job:
+
+Explain in simple terms what this deployment error means.
+
+Tell me the safest next step to fix it for my current setup.
+
+Prefer a solution that does NOT rewrite my app code unless necessary.
+
+Check whether I should:
+
+clean the existing deployment content in the Web App and redeploy, or
+recreate just the Web App resource and redeploy, or
+change the deployment method
+If there is a cleaner Azure CLI deployment option for a fresh deployment, tell me exactly what command to use.
+
+Do not deploy anything yet.
+
+Do not modify code files yet.
+
+Keep the answer specific to a Linux App Service receiving a .NET publish zip from Windows PowerShell.
+
+At the end, give me the exact safest next action in one short step-by-step list.
+
+answer:
+
+What this error means in plain English:
+
+Your Linux App Service is receiving a zip that contains Windows-style path separators inside the archive entries, like runtimes\win-arm\native...
+OneDeploy on Linux uses rsync expecting Linux-style paths. Those backslash-style entries can be treated as invalid path arguments, which causes Invalid argument (22).
+So this is a packaging/deployment artifact format issue, not an app logic/code bug.
+What is safest for your current setup:
+
+Safest first move is not to recreate resources.
+Keep the existing Linux Web App, rebuild the zip in a Linux-safe way, then do a clean deploy.
+I also verified your current deploy.zip has backslashes in entry names, which matches the failure pattern exactly.
+Which option you should choose:
+
+Clean existing deployment content and redeploy: Yes, recommended first, but only after rebuilding the zip with forward-slash entries.
+Recreate only the Web App resource: No, not first choice. It is higher risk (identity/config churn) and usually unnecessary for this error.
+Change deployment method: Use as fallback if OneDeploy still fails after a corrected zip. Run-from-package + config-zip is the clean fallback path.
+Cleaner Azure CLI fresh-deploy command:
+
+Use this when you are ready to redeploy a corrected zip:
+az webapp deploy --resource-group jakearator --name buckeyemarketplace-api-jake1293-wus3 --src-path .\deploy.zip --type zip --clean true --restart true --track-status true
+
+Fallback method command pair (only if needed later):
+
+az webapp config appsettings set --resource-group jakearator --name buckeyemarketplace-api-jake1293-wus3 --settings WEBSITE_RUN_FROM_PACKAGE=1
+az webapp deployment source config-zip --resource-group jakearator --name buckeyemarketplace-api-jake1293-wus3 --src .\deploy.zip
+Exact safest next action (short step-by-step):
+
+Rebuild deploy.zip from publish output using a tool that writes zip entries with forward slashes (not Compress-Archive style backslash entries).
+Redeploy that rebuilt zip with the clean command shown above.
+Only if that still fails, switch to run-from-package with config-zip; recreate the Web App only as last resort.
+
+# (4/23/2026) attempt #1 fix 
+
+prompt used:
+
+Do not edit my application code.
+
+I need a deployment-packaging fix only.
+
+Context:
+
+* My Linux Azure App Service is `buckeyemarketplace-api-jake1293-wus3`
+* Resource group is `jakearator`
+* `dotnet publish` succeeded
+* Azure OneDeploy failed because the deployment log shows rsync errors on Windows-style backslash paths under `/home/site/wwwroot`, such as `runtimes\\win-arm\\native\\...`
+* This indicates a zip packaging/path-format issue, not an app logic issue
+
+Your tasks:
+
+1. Inspect my current deployment flow and determine the safest way on my machine to rebuild `deploy.zip` so the archive entries are deployment-safe for Linux App Service.
+2. Check what zip-capable tools are available in my environment and choose the safest option. Prefer a solution that does not require changing app code.
+3. Tell me exactly which command(s) I should run from the backend folder to:
+
+   * remove the bad zip
+   * rebuild the publish output zip correctly
+   * redeploy it using a clean Azure deploy
+4. If there is a safer fallback deployment method for this exact scenario, provide it too, but label it clearly as fallback only.
+5. Do not modify source files unless absolutely necessary.
+6. Do not deploy anything yet.
+7. Explain in simple terms why the previous zip failed and why the new method should avoid that problem.
+8. At the end, give me one short recommended command sequence to run first.
+
+Important:
+
+* Keep the existing App Service and plan.
+* Do not recreate Azure resources unless no cleaner option works.
+* Focus only on packaging/deployment mechanics for a Linux App Service receiving a .NET publish artifact from Windows.
+
+answer (suggested fix):
+
+I’ve finished the investigation and have a safe command sequence ready; I’ll add one short repo-memory note about this packaging pitfall, then give you the exact commands to run without deploying now.
+
+Inserted into memory file backend.md
+
+Investigation result: your current flow is the risky one for Linux zip deploy.
+
+Current packaging flow found in shell history:
+dotnet publish -c Release -o .\publish
+Compress-Archive -Path .\publish* -DestinationPath .\deploy.zip -Force
+Available zip tools on your machine:
+tar.exe and Compress-Archive (no 7z/zip)
+Local separator test showed:
+Compress-Archive produced Windows-style entry names (example b\x.txt)
+tar -a produced Linux-safe entry names (example ./b/x.txt)
+Why the previous zip failed
+
+Linux OneDeploy uses rsync-like extraction semantics.
+Your zip came from a Windows-oriented packer path style, so entries can be interpreted with backslashes.
+In Linux deploy context, those backslash paths can become invalid rsync arguments, which matches your error pattern.
+Why this should fix it
+
+tar.exe with -a creates a zip with forward-slash entry paths.
+That aligns with Linux App Service extraction behavior and avoids the backslash path issue.
+No app code changes required.
+Exact commands to run from BuckeyeMarketplaceBackend
+
+Remove bad zip:
+Remove-Item .\deploy.zip -Force -ErrorAction SilentlyContinue
+
+Rebuild publish output if needed (you said publish already succeeded, so optional):
+dotnet publish -c Release -o .\publish
+
+Rebuild zip safely for Linux:
+tar -a -c -f .\deploy.zip -C .\publish .
+
+Quick safety check of entry paths:
+tar -tf .\deploy.zip | Select-Object -First 40
+
+Clean redeploy command (run only when you are ready):
+az webapp deploy --resource-group jakearator --name buckeyemarketplace-api-jake1293-wus3 --src-path .\deploy.zip --type zip --clean true --restart true --track-status true
+
+Fallback only (if OneDeploy still fails after tar-built zip)
+
+Use run-from-package style deployment path:
+az webapp config appsettings set --resource-group jakearator --name buckeyemarketplace-api-jake1293-wus3 --settings WEBSITE_RUN_FROM_PACKAGE=1
+az webapp deployment source config-zip --resource-group jakearator --name buckeyemarketplace-api-jake1293-wus3 --src .\deploy.zip --track-status true
+Notes:
+
+This keeps your existing App Service and App Service Plan.
+I did not deploy anything and did not modify application source files.
+Recommended command sequence to run first
+Remove-Item .\deploy.zip -Force -ErrorAction SilentlyContinue; tar -a -c -f .\deploy.zip -C .\publish .; tar -tf .\deploy.zip | Select-Object -First 20
+
+# (4/23/2026) attempt #1 fix didn't work, manual checked azure logs
+
+Found out it was because jwt_key wasn't inserted yet, even though sources said I could wait... inserting that now and it should probably work.
+
+I found this error by checking the "log stream" on my azure's resource group, gotta love automatic logs.
+
+# (4/23/2026) its fixed, just manually changing stuff on Azure so merge can work successfully
+
+# (4/23/2026) problem #2 date error
+
+prompt used to find it:
+
+You are working in my .NET 8 backend project (BuckeyeMarketplaceBackend).
+
+Context:
+
+* The app successfully deploys to Azure App Service
+* It now connects to Azure SQL
+* The app crashes during startup when applying EF Core migrations
+* Error from logs:
+
+System.InvalidCastException: Unable to cast object of type 'System.DateTime' to type 'System.String'
+
+* This happens during migration/seed data (HasData / InsertData)
+* Stack trace points to Program.cs where Database.Migrate() is called
+
+Your task:
+
+1. Locate all EF Core seed data in the project:
+
+   * Look for HasData(...) in DbContext
+   * Also inspect any migrations containing InsertData
+
+2. Identify all properties where:
+
+   * A DateTime field (e.g., PostedDate, CreatedAt, OrderDate, etc.)
+   * Is currently being assigned a string value
+
+3. Fix them by converting string dates to proper DateTime objects:
+   Example:
+   Replace:
+   PostedDate = "2026-03-01T00:00:00"
+   With:
+   PostedDate = new DateTime(2026, 3, 1)
+
+4. Ensure all DateTime fields are:
+
+   * Strongly typed as DateTime (not string)
+   * Consistent with the entity model
+
+5. Do NOT change:
+
+   * Business logic
+   * API routes
+   * Authentication
+   * Database connection setup
+
+6. After fixing:
+
+   * Verify the project builds successfully
+   * Ensure no remaining string-to-DateTime mismatches exist
+
+7. Output:
+
+   * Show exactly which files were modified
+   * Show before/after for each fix
+   * Confirm the app is safe to redeploy
+
+Important:
+
+* Only fix type mismatches related to DateTime in seed data / migrations
+* Do not introduce breaking changes
+* Keep changes minimal and production-safe
+
+answer:
+
+Completed. I found no string literals assigned to DateTime seed properties in HasData or InsertData. The startup cast issue in your migrations was caused by DateTime/DateTimeOffset columns being mapped as TEXT in migration metadata, so EF treated temporal values like strings during migration execution. I fixed only those DateTime type mismatches in migrations/snapshot, with no business logic, routes, auth, or connection setup changes.
+
+Seed data locations found:
+
+HasData in MarketplaceDbContext.cs:118
+InsertData in 20260330234343_InitialCreate.cs:75
+Additional generated HasData metadata in designer/snapshot:
+20260330234343_InitialCreate.Designer.cs:97,
+20260330235442_AddProductAvailabilityAndStock.Designer.cs:103,
+20260415193245_AddIdentityAndAuth.Designer.cs:167,
+20260416003410_AddOrdersAndCheckout.Designer.cs:242,
+MarketplaceDbContextModelSnapshot.cs:239
+What I fixed (before/after for each change):
+
+20260330234343_InitialCreate.cs:40
+Before: PostedDate = table.Column<DateTime>(type: "TEXT", nullable: false),
+After: PostedDate = table.Column<DateTime>(type: "datetime2", nullable: false),
+
+20260330234343_InitialCreate.Designer.cs:85
+Before: .HasColumnType("TEXT");
+After: .HasColumnType("datetime2");
+
+20260330235442_AddProductAvailabilityAndStock.Designer.cs:88
+Before: .HasColumnType("TEXT");
+After: .HasColumnType("datetime2");
+
+20260415193245_AddIdentityAndAuth.cs:44, 20260415193245_AddIdentityAndAuth.cs:166, 20260415193245_AddIdentityAndAuth.cs:167, 20260415193245_AddIdentityAndAuth.cs:168
+Before: type: "TEXT" for LockoutEnd, ExpiresAtUtc, CreatedAtUtc, RevokedAtUtc
+After: type: "datetimeoffset" for LockoutEnd, and type: "datetime2" for ExpiresAtUtc/CreatedAtUtc/RevokedAtUtc
+
+20260415193245_AddIdentityAndAuth.Designer.cs:46, 20260415193245_AddIdentityAndAuth.Designer.cs:152, 20260415193245_AddIdentityAndAuth.Designer.cs:281, 20260415193245_AddIdentityAndAuth.Designer.cs:284, 20260415193245_AddIdentityAndAuth.Designer.cs:287
+Before: .HasColumnType("TEXT")
+After: .HasColumnType("datetimeoffset") for LockoutEnd, and .HasColumnType("datetime2") for PostedDate/CreatedAtUtc/ExpiresAtUtc/RevokedAtUtc
+
+20260416003410_AddOrdersAndCheckout.cs:21
+Before: OrderDate = table.Column<DateTime>(type: "TEXT", nullable: false),
+After: OrderDate = table.Column<DateTime>(type: "datetime2", nullable: false),
+
+20260416003410_AddOrdersAndCheckout.Designer.cs:46, 20260416003410_AddOrdersAndCheckout.Designer.cs:142, 20260416003410_AddOrdersAndCheckout.Designer.cs:227, 20260416003410_AddOrdersAndCheckout.Designer.cs:356, 20260416003410_AddOrdersAndCheckout.Designer.cs:359, 20260416003410_AddOrdersAndCheckout.Designer.cs:362
+Before: .HasColumnType("TEXT")
+After: .HasColumnType("datetimeoffset") for LockoutEnd, and .HasColumnType("datetime2") for OrderDate/PostedDate/CreatedAtUtc/ExpiresAtUtc/RevokedAtUtc
+
+MarketplaceDbContextModelSnapshot.cs:43, MarketplaceDbContextModelSnapshot.cs:139, MarketplaceDbContextModelSnapshot.cs:224, MarketplaceDbContextModelSnapshot.cs:353, MarketplaceDbContextModelSnapshot.cs:356, MarketplaceDbContextModelSnapshot.cs:359
+Before: .HasColumnType("TEXT")
+After: .HasColumnType("datetimeoffset") for LockoutEnd, and .HasColumnType("datetime2") for OrderDate/PostedDate/CreatedAtUtc/ExpiresAtUtc/RevokedAtUtc
+
+Files modified:
+
+20260330234343_InitialCreate.cs
+20260330234343_InitialCreate.Designer.cs
+20260330235442_AddProductAvailabilityAndStock.Designer.cs
+20260415193245_AddIdentityAndAuth.cs
+20260415193245_AddIdentityAndAuth.Designer.cs
+20260416003410_AddOrdersAndCheckout.cs
+20260416003410_AddOrdersAndCheckout.Designer.cs
+MarketplaceDbContextModelSnapshot.cs
+Verification:
+
+Build succeeded: dotnet build BuckeyeMarketplaceBackend.csproj -c Release (0 errors, 0 warnings)
+Final mismatch audit:
+DateTime TEXT mappings: 0
+String-assigned date seed properties: 0
+Redeploy status:
+
+Safe to redeploy from a migration/DateTime typing perspective.
+This patch is minimal and production-safe, and limited to DateTime migration metadata consistency.
+
+# (4/23/2026) problem #3 price, total, hasdata, and insertdata errors merging
+
+prompt used to fix it:
+
+You are working in my .NET 8 backend project (BuckeyeMarketplaceBackend).
+
+Context:
+
+* The app is deployed to Azure App Service and connects to Azure SQL
+
+* Startup fails during EF Core migration with error:
+
+  System.InvalidCastException: Unable to cast object of type 'System.Decimal' to type 'System.String'
+
+* This occurs during migration/seed data (InsertData / HasData)
+
+* Previous DateTime issues have already been fixed
+
+* This is now a decimal type mapping issue (e.g., Product.Price, Order.Total)
+
+Your task:
+
+1. Locate all decimal properties in the domain models:
+
+   * Product.Price
+   * Order.Total
+   * Any other decimal fields
+
+2. Ensure these properties are explicitly mapped to SQL numeric types:
+   In DbContext → OnModelCreating, add or verify:
+
+   modelBuilder.Entity<Product>()
+   .Property(p => p.Price)
+   .HasColumnType("decimal(18,2)");
+
+   modelBuilder.Entity<Order>()
+   .Property(o => o.Total)
+   .HasColumnType("decimal(18,2)");
+
+3. Inspect all EF Core migrations and model snapshot files:
+
+   * Replace any incorrect column types like:
+     "TEXT" or string-based mappings
+   * With:
+     "decimal(18,2)"
+
+4. Check seed data (HasData / InsertData):
+
+   * Ensure decimal fields are NOT wrapped in quotes
+   * Example:
+     Replace:
+     Price = "19.99"
+     With:
+     Price = 19.99m
+
+5. Do NOT change:
+
+   * Business logic
+   * Controllers or routes
+   * Authentication
+   * Connection configuration
+
+6. After fixing:
+
+   * Verify the project builds successfully
+   * Confirm no decimal-to-string mismatches remain
+
+7. Output:
+
+   * List all files modified
+   * Show before/after snippets for each change
+   * Confirm the app is safe to redeploy
+
+Important:
+
+* Keep changes minimal and targeted
+* Only fix decimal type mismatches in EF Core mappings, migrations, and seed data
+* Do not introduce breaking schema changes beyond correcting types
+
+
+# (4/23/2026) problem #4 SQL server type mismatch from the migration, not azure config issue
+
+Cart.UserId is defined in Cart.cs (line 3) as a plain string, and the fix is now enforced in EF model configuration and the cart migration metadata so Azure SQL gets an index-safe nvarchar(450) instead of an unbounded/text-like type.
+
+Files Modified
+
+MarketplaceDbContext.cs (line 30)
+20260330234343_InitialCreate.cs (line 22)
+20260330234343_InitialCreate.Designer.cs (line 28)
+20260330235442_AddProductAvailabilityAndStock.Designer.cs (line 28)
+20260415193245_AddIdentityAndAuth.Designer.cs (line 93)
+20260416003410_AddOrdersAndCheckout.Designer.cs (line 93)
+MarketplaceDbContextModelSnapshot.cs (line 90)
+
+IX_Carts_UserId remains a unique index, and dotnet build BuckeyeMarketplaceBackend/BuckeyeMarketplaceBackend.csproj succeeds. This cart migration path should now be safe to redeploy to Azure SQL because Carts.UserId will be created as nvarchar(450), which is valid for the unique index. Unrelated repo changes were already present in the worktree, and I left them untouched.
+
+# (4/23/2026) more problems
+
+mplemented a focused Identity SQL Server type fix for migrations/snapshots and verified with a build.
+
+Files modified
+
+MarketplaceDbContext.cs
+20260415193245_AddIdentityAndAuth.cs
+20260415193245_AddIdentityAndAuth.Designer.cs
+20260416003410_AddOrdersAndCheckout.Designer.cs
+MarketplaceDbContextModelSnapshot.cs
+
+# (4/23/2026) having codex do a general scan so I can hopefully stop doing error-by-error, very token wasting.
+
+# (4/23/2026) list of codex-found errors, probably going to do a fresh plate since doing sqlite first made this a lot harder than it probably was gonna be
+
+Findings To Fix
+
+The safest SQL Server-compatible schema is already mostly implied by the current model, but the migration history was clearly generated under SQLite and still carries provider-specific artifacts. That makes this a migration-baseline problem more than a business-logic problem.
+
+RefreshTokens.Token is still an indexed SQLite TEXT
+Change targets:
+
+MarketplaceDbContext.cs (line 82) lines 82-89
+20260415193245_AddIdentityAndAuth.cs (line 160) lines 160-165, 219-223
+20260415193245_AddIdentityAndAuth.Designer.cs (line 274) lines 274-303
+20260416003410_AddOrdersAndCheckout.Designer.cs (line 349) lines 349-378
+MarketplaceDbContextModelSnapshot.cs (line 346) lines 346-375
+Safest replacement:
+
+nvarchar(200) for RefreshTokens.Token
+Reason: it is uniquely indexed, and bounded nvarchar(200) is safe for SQL Server indexing. TEXT is not.
+Orders.UserId and Orders.ConfirmationNumber are still indexed SQLite TEXT
+Change targets:
+
+MarketplaceDbContext.cs (line 113) lines 113-140
+20260416003410_AddOrdersAndCheckout.cs (line 14) lines 14-25, 71-80
+20260416003410_AddOrdersAndCheckout.Designer.cs (line 130) lines 130-169
+MarketplaceDbContextModelSnapshot.cs (line 127) lines 127-166
+Safest replacements:
+
+Orders.UserId -> nvarchar(450)
+Orders.ConfirmationNumber -> nvarchar(40)
+Reason: both are indexed, and ConfirmationNumber is unique. UserId should match ASP.NET Identity key width. Both must be bounded strings on SQL Server.
+Integer primary keys still carry SQLite autoincrement metadata
+Affected migration files:
+
+20260330234343_InitialCreate.cs (line 20) lines 20-21, 33-34, 52-53
+20260415193245_AddIdentityAndAuth.cs (line 57) lines 57-58, 78-79, 163-164
+20260416003410_AddOrdersAndCheckout.cs (line 18) lines 18-19, 36-37
+Corresponding generated artifacts also show SQLite integer typing:
+
+20260330234343_InitialCreate.Designer.cs (line 25) lines 25-27, 44-46, 68-70
+20260415193245_AddIdentityAndAuth.Designer.cs (line 276) lines 276-278
+20260416003410_AddOrdersAndCheckout.Designer.cs (line 132) lines 132-134, 174-176, 351-353
+MarketplaceDbContextModelSnapshot.cs (line 129) lines 129-131, 173-176, 348-350
+Safest replacement:
+
+SQL Server IDENTITY(1,1) columns for all int PKs
+In EF terms: regenerate under SQL Server so the migration emits SQL Server identity strategy, or explicitly use SQL Server identity configuration if you want it spelled out.
+Multiple migration/designer/snapshot files still contain SQLite-style TEXT
+Core files affected:
+
+20260330234343_InitialCreate.cs (line 35) lines 35-41
+20260330234343_InitialCreate.Designer.cs (line 72) lines 72-91
+20260415193245_AddIdentityAndAuth.cs (line 60) lines 60-61, 81-82, 165
+20260415193245_AddIdentityAndAuth.Designer.cs (line 289) lines 289-292, plus many earlier Identity string mappings
+20260416003410_AddOrdersAndCheckout.cs (line 20) lines 20, 22, 24-25, 42
+20260416003410_AddOrdersAndCheckout.Designer.cs (line 136) lines 136-160, 186-187, 364-367
+MarketplaceDbContextModelSnapshot.cs (line 133) lines 133-157, 183-184, 361-364
+Safest replacement:
+
+Indexed or unique strings: bounded nvarchar(n)
+Non-indexed normal strings: nvarchar(max) or bounded nvarchar(n) based on real domain limits
+For this audit’s blockers, the important bounded replacements are nvarchar(450), nvarchar(200), and nvarchar(40).
+EF tooling can still fall back to SQLite
+Change targets:
+
+Program.cs (line 16) lines 16-35
+BuckeyeMarketplaceBackend.csproj (line 18) lines 18-19 show both providers are installed
+Why this matters:
+
+The runtime registration still defaults to Data Source=buckeye-marketplace.db and then UseSqlite(...) when SQL Server is not clearly selected.
+dotnet ef can therefore generate SQLite-shaped migrations unless SQL Server is forced at design time.
+Safest replacement:
+
+Force SQL Server during migration generation, ideally with a design-time DbContext factory and/or fail-fast config for migration work.
+Do not let migration scaffolding depend on a fallback SQLite path.
+Manual Patch vs Fresh Baseline
+
+The safest approach is create a fresh SQL Server migration baseline, not manually patch the existing migrations.
+
+Why:
+
+The SQLite artifacts are spread across three migrations, two designer histories, and the current snapshot.
+Manual edits would need to keep migration code, designer files, and snapshot perfectly aligned.
+Missing even one SQLite annotation or TEXT mapping can produce another broken scaffold later.
+The current model already points in the right direction; the migration history is the unstable part.
+Best Choice For This Class Project
+
+For a student project where the Azure SQL database can be reset, the best choice is:
+
+keep business/entity logic as-is
+tighten the model to make SQL Server string widths explicit where needed
+force SQL Server for EF tooling
+remove the SQLite-generated migration history
+generate one fresh SQL Server baseline migration from the current model
+apply that baseline to a reset Azure SQL database
+That is lower risk than hand-repairing provider-specific history.
+
+Recommended Fix Approach
+
+Create a fresh SQL Server migration baseline.
+
+Why:
+
+it fixes all five blockers in one controlled pass
+it avoids fragile hand-editing of old SQLite migration artifacts
+it gives you a clean snapshot/designer pair generated by the correct provider
+it is the most practical option when the Azure SQL database is resettable
+If you want, the next step can be a precise execution plan for that baseline reset and regeneration sequence, but I won’t change files until you say to proceed.
+
+# (4/23/2026) doing clean upload again, deleting all previous migrations in IDE
+
+# (4/23/2026) BEEN AT THIS FOR A MINUTE NOW.... BACKEND IS OFFICIALLY WORKING...! Doing the error changes one-by-one was a mistake as the migration was always going to keep using SQLITE so I made a script to remake gatorade (the server for Azure) and delete previous migrations, and adjusted it accordingly so it actually used non-sqlite stuff. 
+
+# (4/23/2026) changing the link in the frontend from localhost:#### to my official link... moment of truth.... 
+
+prompt for that:
+
+You are working in the BuckeyeMarketplaceFrontend (React + Vite).
+
+CRITICAL RULES:
+
+* Do NOT change UI layout, styling, or component structure
+* Do NOT modify business logic beyond API base URL usage
+* Do NOT remove existing functionality
+* Only update API configuration to point to production backend safely
+
+Context:
+
+* Backend is deployed at:
+  https://buckeyemarketplace-api-jake1293-wus3.azurewebsites.net
+* Frontend currently calls localhost (development API)
+* We want frontend to use production API
+
+Your tasks:
+
+1. Locate the API base configuration:
+
+   * Likely file: src/services/api.ts (or similar)
+
+2. Refactor API base URL to use environment variables:
+
+   * Use:
+     import.meta.env.VITE_API_URL
+
+3. Update code:
+   BEFORE (example):
+   const API_BASE = "http://localhost:5000";
+
+   AFTER:
+   const API_BASE = import.meta.env.VITE_API_URL;
+
+4. Ensure all API calls use this base variable consistently
+
+5. Create/update environment files:
+
+   * .env (for local dev):
+     VITE_API_URL=http://localhost:5000
+
+   * .env.production:
+     VITE_API_URL=https://buckeyemarketplace-api-jake1293-wus3.azurewebsites.net
+
+6. Do NOT hardcode URLs directly in components
+
+7. Verify:
+
+   * No TypeScript errors
+   * No broken imports
+   * API calls still function
+
+8. Output:
+
+   * Files modified
+   * Confirmation API_BASE uses env variable
+   * Confirmation env files created/updated
+
+Goal:
+Make frontend environment-aware so it can switch between local and Azure backend cleanly without breaking existing functionality.
+
+answer from prompt: 
+
+Updated the frontend API configuration in src/services/api.ts (line 17) so API_BASE_URL now derives from import.meta.env.VITE_API_URL, while safely normalizing the host to /api. That keeps every existing call site unchanged, since all requests still go through the shared apiFetch helper at api.ts (line 37). No UI, layout, or component structure was changed.
+
+Files modified:
+
+src/services/api.ts (line 17)
+.env (line 1)
+.env.production (line 1)
+.env.production.example (line 1)
+Confirmation:
+
+API_BASE_URL uses import.meta.env.VITE_API_URL.
+.env created with VITE_API_URL=http://localhost:5000.
+.env.production created with VITE_API_URL=https://buckeyemarketplace-api-jake1293-wus3.azurewebsites.net.
+All API calls remain centralized through the same base variable; no components were given hardcoded backend URLs.
+Verification:
+
+npm run build passed successfully.
+Focused TypeScript check for the API service passed.
+Full-project tsc --noEmit still reports one unrelated pre-existing test issue at src/tests/LoginPage.test.tsx (line 20): beforeEach is not currently typed/imported there.
+
+# (4/23/2026) I BELIEVE WE ARE UP AND RUNNING FRONTEND/BACKEND/AZURE... WOoo!
+
+# (4/23/2026) LINK TO WEBSITE: 

@@ -18,6 +18,20 @@ builder.Services.AddDbContext<MarketplaceDbContext>(options =>
 {
     var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
         ?? "Data Source=buckeye-marketplace.db";
+
+    var databaseProvider = builder.Configuration["Database:Provider"];
+
+    if (string.Equals(databaseProvider, "SqlServer", StringComparison.OrdinalIgnoreCase)
+        || LooksLikeSqlServerConnection(connectionString))
+    {
+        options.UseSqlServer(connectionString, sqlOptions =>
+        {
+            sqlOptions.EnableRetryOnFailure(5, TimeSpan.FromSeconds(10), null);
+        });
+
+        return;
+    }
+
     options.UseSqlite(connectionString);
 });
 builder.Services
@@ -101,7 +115,13 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("ReactFrontend", policy =>
     {
-        policy.WithOrigins("http://localhost:5173")
+        var configuredCorsOrigins = builder.Configuration["CORS:AllowedOrigins"];
+        var allowedOrigins = string.IsNullOrWhiteSpace(configuredCorsOrigins)
+            ? new[] { "http://localhost:5173" }
+            : configuredCorsOrigins
+                .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
+        policy.WithOrigins(allowedOrigins)
             .AllowAnyMethod()
             .AllowAnyHeader();
     });
@@ -215,5 +235,19 @@ app.UseAuthorization();
 app.MapControllers();
 
 app.Run();
+
+static bool LooksLikeSqlServerConnection(string connectionString)
+{
+    if (string.IsNullOrWhiteSpace(connectionString))
+    {
+        return false;
+    }
+
+    var normalizedConnectionString = connectionString.ToLowerInvariant();
+
+    return normalizedConnectionString.Contains("server=")
+        || normalizedConnectionString.Contains("initial catalog=")
+        || normalizedConnectionString.Contains("database=");
+}
 
 public partial class Program;
