@@ -5,12 +5,12 @@ using BuckeyeMarketplaceBackend.Models;
 using BuckeyeMarketplaceBackend.Services;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
+using System.ComponentModel.DataAnnotations;
 
 namespace BuckeyeMarketplaceBackend.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    [Authorize]
     public class OrdersController : ControllerBase
     {
         private static readonly HashSet<string> AllowedStatuses = new(StringComparer.OrdinalIgnoreCase)
@@ -31,6 +31,7 @@ namespace BuckeyeMarketplaceBackend.Controllers
 
         // POST: api/orders
         [HttpPost]
+        [AllowAnonymous]
         public async Task<ActionResult<object>> PlaceOrder([FromBody] PlaceOrderRequest request)
         {
             var shippingAddress = request.ShippingAddress.Trim();
@@ -44,54 +45,146 @@ namespace BuckeyeMarketplaceBackend.Controllers
                 return BadRequest("Shipping address cannot exceed 500 characters.");
             }
 
-            var userId = GetCurrentUserId();
-            var cart = await _dbContext.Carts
-                .Include(c => c.Items)
-                    .ThenInclude(i => i.Product)
-                .FirstOrDefaultAsync(c => c.UserId == userId);
-
-            if (cart == null || cart.Items.Count == 0)
+            var userId = TryGetCurrentUserId();
+            var customerEmail = ResolveCustomerEmail(request.CustomerEmail);
+            if (customerEmail == null && userId == null)
             {
-                return BadRequest("Your cart is empty. Add items before placing an order.");
+                return BadRequest("Email is required for guest checkout.");
             }
 
-            foreach (var cartItem in cart.Items)
+            if (!string.IsNullOrWhiteSpace(request.CustomerEmail) && customerEmail == null)
             {
-                if (cartItem.Product == null)
-                {
-                    return NotFound($"Product with id {cartItem.ProductId} was not found.");
-                }
-
-                if (!cartItem.Product.IsAvailable)
-                {
-                    return Conflict($"{cartItem.Product.Title ?? "This product"} is currently unavailable.");
-                }
-
-                if (cartItem.Quantity > cartItem.Product.StockQuantity)
-                {
-                    return Conflict($"Only {cartItem.Product.StockQuantity} unit(s) are available for {cartItem.Product.Title ?? "this product"}.");
-                }
+                return BadRequest("A valid email address is required.");
             }
 
-            var order = CartToOrderMapper.MapToOrder(
-                cart,
-                userId,
-                shippingAddress,
-                DateTime.UtcNow,
-                GenerateConfirmationNumber());
+            Order order;
 
-            foreach (var cartItem in cart.Items)
+            if (userId != null)
             {
-                cartItem.Product!.StockQuantity -= cartItem.Quantity;
-                if (cartItem.Product.StockQuantity <= 0)
+                var cart = await _dbContext.Carts
+                    .Include(c => c.Items)
+                        .ThenInclude(i => i.Product)
+                    .FirstOrDefaultAsync(c => c.UserId == userId);
+
+                if (cart == null || cart.Items.Count == 0)
                 {
-                    cartItem.Product.StockQuantity = 0;
-                    cartItem.Product.IsAvailable = false;
+                    return BadRequest("Your cart is empty. Add items before placing an order.");
+                }
+
+                foreach (var cartItem in cart.Items)
+                {
+                    if (cartItem.Product == null)
+                    {
+                        return NotFound($"Product with id {cartItem.ProductId} was not found.");
+                    }
+
+                    if (!cartItem.Product.IsAvailable)
+                    {
+                        return Conflict($"{cartItem.Product.Title ?? "This product"} is currently unavailable.");
+                    }
+
+                    if (cartItem.Quantity > cartItem.Product.StockQuantity)
+                    {
+                        return Conflict($"Only {cartItem.Product.StockQuantity} unit(s) are available for {cartItem.Product.Title ?? "this product"}.");
+                    }
+                }
+
+                order = CartToOrderMapper.MapToOrder(
+                    cart,
+                    userId,
+                    shippingAddress,
+                    DateTime.UtcNow,
+                    GenerateConfirmationNumber(),
+                    customerEmail ?? TryGetCurrentUserEmail());
+
+                foreach (var cartItem in cart.Items)
+                {
+                    cartItem.Product!.StockQuantity -= cartItem.Quantity;
+                    if (cartItem.Product.StockQuantity <= 0)
+                    {
+                        cartItem.Product.StockQuantity = 0;
+                        cartItem.Product.IsAvailable = false;
+                    }
+                }
+
+                _dbContext.CartItems.RemoveRange(cart.Items);
+            }
+            else
+            {
+                var normalizedItems = request.Items
+                    .Where(item => item.ProductId > 0 && item.Quantity > 0)
+                    .GroupBy(item => item.ProductId)
+                    .Select(group => new PlaceOrderItemRequest
+                    {
+                        ProductId = group.Key,
+                        Quantity = group.Sum(item => item.Quantity)
+                    })
+                    .ToList();
+
+                if (normalizedItems.Count == 0)
+                {
+                    return BadRequest("Your cart is empty. Add items before placing an order.");
+                }
+
+                if (normalizedItems.Count != request.Items.Count)
+                {
+                    return BadRequest("Each order item must include a valid product id and quantity.");
+                }
+
+                var requestedProductIds = normalizedItems.Select(item => item.ProductId).ToList();
+                var products = await _dbContext.Products
+                    .Where(product => requestedProductIds.Contains(product.Id))
+                    .ToDictionaryAsync(product => product.Id);
+
+                var orderItems = new List<OrderItem>();
+
+                foreach (var requestedItem in normalizedItems)
+                {
+                    if (!products.TryGetValue(requestedItem.ProductId, out var product))
+                    {
+                        return NotFound($"Product with id {requestedItem.ProductId} was not found.");
+                    }
+
+                    if (!product.IsAvailable)
+                    {
+                        return Conflict($"{product.Title ?? "This product"} is currently unavailable.");
+                    }
+
+                    if (requestedItem.Quantity > product.StockQuantity)
+                    {
+                        return Conflict($"Only {product.StockQuantity} unit(s) are available for {product.Title ?? "this product"}.");
+                    }
+
+                    orderItems.Add(new OrderItem
+                    {
+                        ProductId = product.Id,
+                        ProductTitle = product.Title ?? "Untitled Product",
+                        Quantity = requestedItem.Quantity,
+                        UnitPrice = product.Price
+                    });
+                }
+
+                order = CartToOrderMapper.MapToOrder(
+                    orderItems,
+                    null,
+                    shippingAddress,
+                    DateTime.UtcNow,
+                    GenerateConfirmationNumber(),
+                    customerEmail);
+
+                foreach (var requestedItem in normalizedItems)
+                {
+                    var product = products[requestedItem.ProductId];
+                    product.StockQuantity -= requestedItem.Quantity;
+                    if (product.StockQuantity <= 0)
+                    {
+                        product.StockQuantity = 0;
+                        product.IsAvailable = false;
+                    }
                 }
             }
 
             _dbContext.Orders.Add(order);
-            _dbContext.CartItems.RemoveRange(cart.Items);
             await _dbContext.SaveChangesAsync();
 
             return Ok(MapOrderResponse(order));
@@ -99,6 +192,7 @@ namespace BuckeyeMarketplaceBackend.Controllers
 
         // GET: api/orders/mine
         [HttpGet("mine")]
+        [Authorize]
         public async Task<ActionResult<IEnumerable<object>>> GetMyOrders()
         {
             var userId = GetCurrentUserId();
@@ -163,9 +257,32 @@ namespace BuckeyeMarketplaceBackend.Controllers
             return Ok(MapOrderResponse(order));
         }
 
+        private static string? ResolveCustomerEmail(string? email)
+        {
+            if (string.IsNullOrWhiteSpace(email))
+            {
+                return null;
+            }
+
+            var normalizedEmail = email.Trim();
+            var validator = new EmailAddressAttribute();
+
+            return validator.IsValid(normalizedEmail) ? normalizedEmail : null;
+        }
+
+        private string? TryGetCurrentUserId()
+        {
+            return User.FindFirstValue(ClaimTypes.NameIdentifier);
+        }
+
+        private string? TryGetCurrentUserEmail()
+        {
+            return User.FindFirstValue(ClaimTypes.Email);
+        }
+
         private string GetCurrentUserId()
         {
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var userId = TryGetCurrentUserId();
             if (string.IsNullOrWhiteSpace(userId))
             {
                 throw new InvalidOperationException("Authenticated user id was not found in JWT claims.");
@@ -185,6 +302,7 @@ namespace BuckeyeMarketplaceBackend.Controllers
             {
                 id = order.Id,
                 userId = order.UserId,
+                customerEmail = order.CustomerEmail,
                 orderDate = order.OrderDate,
                 status = order.Status,
                 total = order.Total,

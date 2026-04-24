@@ -562,7 +562,10 @@ const AdminDashboardPage: FC = () => {
                         <div>{order.confirmationNumber}</div>
                         <div style={styles.smallText}>#{order.id}</div>
                       </td>
-                      <td style={styles.td}>{order.userId}</td>
+                      <td style={styles.td}>
+                        <div>{order.userId ?? 'Guest'}</div>
+                        {order.customerEmail && <div style={styles.smallText}>{order.customerEmail}</div>}
+                      </td>
                       <td style={styles.td}>{new Date(order.orderDate).toLocaleString()}</td>
                       <td style={styles.td}>${order.total.toFixed(2)}</td>
                       <td style={styles.td}>{order.shippingAddress}</td>

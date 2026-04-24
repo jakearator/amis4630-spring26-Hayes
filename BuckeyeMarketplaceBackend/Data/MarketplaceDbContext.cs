@@ -112,8 +112,11 @@ namespace BuckeyeMarketplaceBackend.Data
 
             modelBuilder.Entity<Order>()
                 .Property(o => o.UserId)
-                .HasMaxLength(450)
-                .IsRequired();
+                .HasMaxLength(450);
+
+            modelBuilder.Entity<Order>()
+                .Property(o => o.CustomerEmail)
+                .HasMaxLength(256);
 
             modelBuilder.Entity<Order>()
                 .Property(o => o.Status)

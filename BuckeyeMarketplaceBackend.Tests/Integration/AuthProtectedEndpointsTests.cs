@@ -12,6 +12,7 @@ using Microsoft.Extensions.Options;
 using System.Security.Claims;
 using System.Text.Json;
 using System.Text.Encodings.Web;
+using System.Text;
 using BuckeyeMarketplaceBackend.Models;
 
 namespace BuckeyeMarketplaceBackend.Tests.Integration;
@@ -98,6 +99,46 @@ public class AuthProtectedEndpointsTests : IClassFixture<AuthProtectedEndpointsT
             var userId = order.GetProperty("userId").GetString();
             Assert.Equal("shopper-a", userId);
         }
+    }
+
+    [Fact]
+    public async Task GuestCheckout_ReturnsOk_WithoutAuthentication()
+    {
+        using var client = _factory.CreateClient(new WebApplicationFactoryClientOptions
+        {
+            BaseAddress = new Uri("https://localhost"),
+            AllowAutoRedirect = false
+        });
+
+        var payload = JsonSerializer.Serialize(new
+        {
+            customerEmail = "guest@example.com",
+            shippingAddress = "500 Guest Lane",
+            items = new[]
+            {
+                new
+                {
+                    productId = 1,
+                    quantity = 1
+                }
+            }
+        });
+
+        using var response = await client.PostAsync(
+            "/api/orders",
+            new StringContent(payload, Encoding.UTF8, "application/json"));
+
+        var responseBody = await response.Content.ReadAsStringAsync();
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        using var document = JsonDocument.Parse(responseBody);
+        var order = document.RootElement;
+
+        Assert.Equal(JsonValueKind.Null, order.GetProperty("userId").ValueKind);
+        Assert.Equal("guest@example.com", order.GetProperty("customerEmail").GetString());
+        Assert.Equal("500 Guest Lane", order.GetProperty("shippingAddress").GetString());
+        Assert.NotEmpty(order.GetProperty("items").EnumerateArray());
     }
 
     private async Task SeedOrdersAsync()

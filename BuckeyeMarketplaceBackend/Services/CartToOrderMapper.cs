@@ -4,22 +4,46 @@ namespace BuckeyeMarketplaceBackend.Services
 {
     public static class CartToOrderMapper
     {
-        public static Order MapToOrder(Cart cart, string userId, string shippingAddress, DateTime orderDateUtc, string confirmationNumber)
+        public static Order MapToOrder(
+            Cart cart,
+            string? userId,
+            string shippingAddress,
+            DateTime orderDateUtc,
+            string confirmationNumber,
+            string? customerEmail = null)
         {
-            var order = new Order
-            {
-                UserId = userId,
-                OrderDate = orderDateUtc,
-                Status = "Placed",
-                ShippingAddress = shippingAddress,
-                ConfirmationNumber = confirmationNumber,
-                Items = cart.Items.Select(cartItem => new OrderItem
+            return MapToOrder(
+                cart.Items.Select(cartItem => new OrderItem
                 {
                     ProductId = cartItem.ProductId,
                     Quantity = cartItem.Quantity,
                     UnitPrice = cartItem.Product?.Price ?? 0m,
                     ProductTitle = cartItem.Product?.Title ?? "Untitled Product"
-                }).ToList()
+                }).ToList(),
+                userId,
+                shippingAddress,
+                orderDateUtc,
+                confirmationNumber,
+                customerEmail);
+        }
+
+        public static Order MapToOrder(
+            List<OrderItem> items,
+            string? userId,
+            string shippingAddress,
+            DateTime orderDateUtc,
+            string confirmationNumber,
+            string? customerEmail = null)
+        {
+            var order = new Order
+            {
+                UserId = userId,
+                CustomerEmail = customerEmail,
+                OrderDate = orderDateUtc,
+                Status = "Placed",
+                ShippingAddress = shippingAddress,
+                ConfirmationNumber = confirmationNumber,
+                Items = items
             };
 
             order.Total = OrderCalculator.CalculateTotal(order.Items);

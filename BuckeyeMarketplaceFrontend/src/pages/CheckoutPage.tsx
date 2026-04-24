@@ -1,20 +1,40 @@
-import { CSSProperties, FC, FormEvent, useMemo, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { CSSProperties, FC, FormEvent, useEffect, useMemo, useState } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import Button from '../components/atoms/Button';
 import Header from '../components/organisms/Header';
+import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
 import { placeOrder } from '../services/api';
 
+type CheckoutMode = 'account' | 'choice' | 'guest';
+
 const CheckoutPage: FC = () => {
   const navigate = useNavigate();
-  const { items, itemCount, subtotal, reloadCart } = useCart();
+  const location = useLocation();
+  const { isAuthenticated } = useAuth();
+  const { items, itemCount, subtotal, finalizeCheckout } = useCart();
+  const [checkoutMode, setCheckoutMode] = useState<CheckoutMode>(isAuthenticated ? 'account' : 'choice');
+  const [customerEmail, setCustomerEmail] = useState('');
   const [shippingAddress, setShippingAddress] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const isGuestCheckout = !isAuthenticated && checkoutMode === 'guest';
+
+  useEffect(() => {
+    setCheckoutMode(isAuthenticated ? 'account' : 'choice');
+  }, [isAuthenticated]);
 
   const canPlaceOrder = useMemo(() => {
-    return items.length > 0 && shippingAddress.trim().length > 0 && !isSubmitting;
-  }, [items.length, shippingAddress, isSubmitting]);
+    if (items.length === 0 || shippingAddress.trim().length === 0 || isSubmitting) {
+      return false;
+    }
+
+    if (isGuestCheckout && customerEmail.trim().length === 0) {
+      return false;
+    }
+
+    return true;
+  }, [customerEmail, isGuestCheckout, items.length, shippingAddress, isSubmitting]);
 
   const styles: Record<string, CSSProperties> = {
     page: {
@@ -43,6 +63,13 @@ const CheckoutPage: FC = () => {
       borderRadius: '12px',
       border: '1px solid #ececec',
       padding: '20px',
+    },
+    optionCard: {
+      backgroundColor: '#fff',
+      borderRadius: '12px',
+      border: '1px solid #ececec',
+      padding: '20px',
+      marginBottom: '24px',
     },
     sectionTitle: {
       margin: '0 0 14px',
@@ -100,6 +127,16 @@ const CheckoutPage: FC = () => {
       fontWeight: 600,
       color: '#333',
     },
+    input: {
+      width: '100%',
+      borderRadius: '8px',
+      border: '1px solid #d6d6d6',
+      padding: '12px',
+      fontSize: '14px',
+      fontFamily: 'inherit',
+      boxSizing: 'border-box',
+      marginBottom: '16px',
+    },
     textarea: {
       width: '100%',
       minHeight: '120px',
@@ -123,6 +160,12 @@ const CheckoutPage: FC = () => {
       gap: '12px',
       flexWrap: 'wrap',
     },
+    choiceActions: {
+      display: 'flex',
+      gap: '12px',
+      flexWrap: 'wrap',
+      marginTop: '14px',
+    },
     linkButton: {
       textDecoration: 'none',
       display: 'inline-block',
@@ -139,14 +182,26 @@ const CheckoutPage: FC = () => {
       color: '#555',
       fontSize: '16px',
     },
+    optionText: {
+      margin: 0,
+      color: '#555',
+      fontSize: '15px',
+      lineHeight: 1.5,
+    },
   };
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>): Promise<void> => {
     event.preventDefault();
     const address = shippingAddress.trim();
+    const email = customerEmail.trim();
 
     if (!address) {
       setError('Shipping address is required.');
+      return;
+    }
+
+    if (isGuestCheckout && !email) {
+      setError('Email is required for guest checkout.');
       return;
     }
 
@@ -154,8 +209,14 @@ const CheckoutPage: FC = () => {
     setIsSubmitting(true);
 
     try {
-      const order = await placeOrder({ shippingAddress: address });
-      await reloadCart();
+      const order = await placeOrder({
+        shippingAddress: address,
+        customerEmail: isGuestCheckout ? email : undefined,
+        items: isGuestCheckout
+          ? items.map((item) => ({ productId: item.id, quantity: item.quantity }))
+          : undefined,
+      });
+      await finalizeCheckout();
       navigate('/order-confirmation', { state: { order }, replace: true });
     } catch (submitError) {
       if (submitError instanceof Error && submitError.message.trim().length > 0) {
@@ -184,11 +245,34 @@ const CheckoutPage: FC = () => {
     );
   }
 
+  const loginState = {
+    from: {
+      pathname: location.pathname,
+    },
+  };
+
   return (
     <div style={styles.page}>
       <Header />
       <div style={styles.container}>
         <h1 style={styles.title}>Checkout</h1>
+
+        {!isAuthenticated && (
+          <section style={styles.optionCard}>
+            <h2 style={styles.sectionTitle}>Choose How to Continue</h2>
+            <p style={styles.optionText}>
+              You can sign in to use your account, or continue with guest checkout and place this order without logging in.
+            </p>
+            <div style={styles.choiceActions}>
+              <Link to="/login" state={loginState} style={styles.linkButton}>
+                <Button type="button">Log In</Button>
+              </Link>
+              <Button type="button" onClick={() => setCheckoutMode('guest')}>
+                Checkout as Guest
+              </Button>
+            </div>
+          </section>
+        )}
 
         <div style={styles.layout}>
           <section style={styles.card}>
@@ -222,30 +306,59 @@ const CheckoutPage: FC = () => {
           </section>
 
           <section style={styles.card}>
-            <h2 style={styles.sectionTitle}>Shipping Address</h2>
-            <form onSubmit={(event) => { void handleSubmit(event); }}>
-              <label htmlFor="shipping-address" style={styles.label}>Enter full delivery address</label>
-              <textarea
-                id="shipping-address"
-                name="shippingAddress"
-                value={shippingAddress}
-                onChange={(event) => setShippingAddress(event.target.value)}
-                style={styles.textarea}
-                maxLength={500}
-                required
-              />
+            <h2 style={styles.sectionTitle}>
+              {isGuestCheckout ? 'Guest Checkout Details' : 'Shipping Address'}
+            </h2>
 
-              {error && <p style={styles.error}>{error}</p>}
+            {!isAuthenticated && checkoutMode !== 'guest' ? (
+              <p style={styles.optionText}>
+                Select <strong>Log In</strong> or <strong>Checkout as Guest</strong> above to continue.
+              </p>
+            ) : (
+              <form onSubmit={(event) => { void handleSubmit(event); }}>
+                {isGuestCheckout && (
+                  <>
+                    <label htmlFor="customer-email" style={styles.label}>Email address</label>
+                    <input
+                      id="customer-email"
+                      name="customerEmail"
+                      type="email"
+                      value={customerEmail}
+                      onChange={(event) => setCustomerEmail(event.target.value)}
+                      style={styles.input}
+                      maxLength={256}
+                      required
+                    />
+                  </>
+                )}
 
-              <div style={styles.formActions}>
-                <Button type="submit" disabled={!canPlaceOrder}>
-                  {isSubmitting ? 'Placing Order...' : 'Place Order'}
-                </Button>
-                <Link to="/cart" style={styles.linkButton}>
-                  <Button type="button" disabled={isSubmitting}>Back to Cart</Button>
-                </Link>
-              </div>
-            </form>
+                <label htmlFor="shipping-address" style={styles.label}>Enter full delivery address</label>
+                <textarea
+                  id="shipping-address"
+                  name="shippingAddress"
+                  value={shippingAddress}
+                  onChange={(event) => setShippingAddress(event.target.value)}
+                  style={styles.textarea}
+                  maxLength={500}
+                  required
+                />
+
+                {error && <p style={styles.error}>{error}</p>}
+
+                <div style={styles.formActions}>
+                  <Button type="submit" disabled={!canPlaceOrder}>
+                    {isSubmitting
+                      ? 'Placing Order...'
+                      : isGuestCheckout
+                        ? 'Place Guest Order'
+                        : 'Place Order'}
+                  </Button>
+                  <Link to="/cart" style={styles.linkButton}>
+                    <Button type="button" disabled={isSubmitting}>Back to Cart</Button>
+                  </Link>
+                </div>
+              </form>
+            )}
           </section>
         </div>
       </div>

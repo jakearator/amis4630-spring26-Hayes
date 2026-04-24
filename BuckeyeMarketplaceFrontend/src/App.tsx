@@ -23,19 +23,20 @@ const AppRoutes: FC = () => {
 
   return (
     <Routes>
-      <Route path="/" element={<Navigate to={isAuthenticated ? '/products' : '/login'} replace />} />
+      <Route path="/" element={<ProductListPage />} />
       <Route path="/login" element={isAuthenticated ? <Navigate to="/products" replace /> : <LoginPage />} />
       <Route path="/register" element={isAuthenticated ? <Navigate to="/products" replace /> : <RegisterPage />} />
 
-      <Route path="/products" element={<ProtectedRoute><ProductListPage /></ProtectedRoute>} />
-      <Route path="/products/:id" element={<ProtectedRoute><ProductDetailPage /></ProtectedRoute>} />
+      <Route path="/products" element={<ProductListPage />} />
+      <Route path="/products/catalog" element={<ProductListPage />} />
+      <Route path="/products/:id" element={<ProductDetailPage />} />
       <Route path="/admin" element={<AdminRoute><AdminDashboardPage /></AdminRoute>} />
-      <Route path="/cart" element={<ProtectedRoute><CartPage /></ProtectedRoute>} />
-      <Route path="/checkout" element={<ProtectedRoute><CheckoutPage /></ProtectedRoute>} />
-      <Route path="/order-confirmation" element={<ProtectedRoute><OrderConfirmationPage /></ProtectedRoute>} />
+      <Route path="/cart" element={<CartPage />} />
+      <Route path="/checkout" element={<CheckoutPage />} />
+      <Route path="/order-confirmation" element={<OrderConfirmationPage />} />
       <Route path="/orders" element={<ProtectedRoute><OrderHistoryPage /></ProtectedRoute>} />
 
-      <Route path="*" element={<Navigate to={isAuthenticated ? '/products' : '/login'} replace />} />
+      <Route path="*" element={<Navigate to="/products" replace />} />
     </Routes>
   );
 };

@@ -83,6 +83,14 @@ const Header: FC = () => {
       fontSize: '14px',
       fontWeight: '600',
     },
+    authLinks: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: '6px',
+      color: '#444',
+      fontSize: '14px',
+      fontWeight: '600',
+    },
     logoutButton: {
       border: 'none',
       background: '#BB0000',
@@ -183,10 +191,11 @@ const Header: FC = () => {
               </button>
             </>
           ) : (
-            <>
-              <Link to="/login" style={styles.authLink}>Log In</Link>
-              <Link to="/register" style={styles.authLink}>Register</Link>
-            </>
+            <div style={styles.authLinks} aria-label="Login or create account">
+              <Link to="/login" style={styles.authLink}>Login</Link>
+              <span>/</span>
+              <Link to="/register" style={styles.authLink}>Create Account</Link>
+            </div>
           )}
         </div>
       </div>

@@ -49,6 +49,11 @@ export interface CartApiResponse {
   items: CartApiItem[];
 }
 
+export interface PlaceOrderItemRequest {
+  productId: number;
+  quantity: number;
+}
+
 export interface LoginRequest {
   email: string;
   password: string;
@@ -68,6 +73,8 @@ export interface AuthResponse {
 
 export interface PlaceOrderRequest {
   shippingAddress: string;
+  customerEmail?: string;
+  items?: PlaceOrderItemRequest[];
 }
 
 export interface OrderItem {
@@ -81,7 +88,8 @@ export interface OrderItem {
 
 export interface Order {
   id: number;
-  userId: string;
+  userId: string | null;
+  customerEmail?: string | null;
   orderDate: string;
   status: string;
   total: number;

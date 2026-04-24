@@ -12,6 +12,7 @@ const OrderConfirmationPage: FC = () => {
   const location = useLocation();
   const state = location.state as ConfirmationLocationState | null;
   const order = state?.order;
+  const isGuestOrder = order?.userId == null;
 
   const styles: Record<string, CSSProperties> = {
     page: {
@@ -86,19 +87,22 @@ const OrderConfirmationPage: FC = () => {
                 <li>Status: {order.status}</li>
                 <li>Placed: {new Date(order.orderDate).toLocaleString()}</li>
                 <li>Total: ${order.total.toFixed(2)}</li>
+                {order.customerEmail && <li>Email: {order.customerEmail}</li>}
                 <li>Shipping Address: {order.shippingAddress}</li>
               </ul>
             </>
           ) : (
             <p style={styles.text}>
-              Your order was placed, but this confirmation view was opened without order details. You can find the order in your history.
+              Your order was placed, but this confirmation view was opened without order details.
             </p>
           )}
 
           <div style={styles.actions}>
-            <Link to="/orders" style={styles.linkButton}>
-              <Button>View Order History</Button>
-            </Link>
+            {!isGuestOrder && (
+              <Link to="/orders" style={styles.linkButton}>
+                <Button>View Order History</Button>
+              </Link>
+            )}
             <Link to="/products" style={styles.linkButton}>
               <Button>Continue Shopping</Button>
             </Link>
