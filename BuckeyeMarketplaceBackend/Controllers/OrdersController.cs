@@ -55,8 +55,6 @@ namespace BuckeyeMarketplaceBackend.Controllers
                 return BadRequest("Your cart is empty. Add items before placing an order.");
             }
 
-            await using var transaction = await _dbContext.Database.BeginTransactionAsync();
-
             foreach (var cartItem in cart.Items)
             {
                 if (cartItem.Product == null)
@@ -95,7 +93,6 @@ namespace BuckeyeMarketplaceBackend.Controllers
             _dbContext.Orders.Add(order);
             _dbContext.CartItems.RemoveRange(cart.Items);
             await _dbContext.SaveChangesAsync();
-            await transaction.CommitAsync();
 
             return Ok(MapOrderResponse(order));
         }
