@@ -130,3 +130,4 @@ dotnet run
 - Frontend details: `BuckeyeMarketplaceFrontend/README.md`
 - Backend details: `BuckeyeMarketplaceBackend/README.md`
 - Change history: `CHANGELOG.md`
+- AI-usage (very useful to see progress of making this): `AI-usage-documentation/ai-usage-by-date.md`
