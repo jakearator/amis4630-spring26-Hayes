@@ -34,6 +34,16 @@ jobs:
           api_location: "" # Api source code path - optional
           output_location: "dist" # Built app content directory - optional
           ###### End of Repository/Build Configurations ######
+      - name: Build Backend
+        run: |
+          cd BuckeyeMarketplaceBackend
+          dotnet publish -c Release -o publish
+      - name: Deploy Backend
+        uses: azure/webapps-deploy@v2
+        with:
+          app-name: buckeyemarketplace-api-jake1293-wus3
+          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+          package: BuckeyeMarketplaceBackend/publish
 
   close_pull_request_job:
     if: github.event_name == 'pull_request' && github.event.action == 'closed'
