@@ -1281,4 +1281,6 @@ Full-project tsc --noEmit still reports one unrelated pre-existing test issue at
 
 # (4/23/2026) I BELIEVE WE ARE UP AND RUNNING FRONTEND/BACKEND/AZURE... WOoo!
 
-# (4/23/2026) LINK TO WEBSITE: 
+# (4/23/2026) LINK TO WEBSITE: ...
+
+# (4/23/2026) it's working... just having small bugs with making an account now since it's the first screen you see, working on those now.
