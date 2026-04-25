@@ -9,10 +9,7 @@ import './CheckoutPage.css';
 
 type CheckoutMode = 'account' | 'choice' | 'guest';
 
-interface GuestDeliveryDetails {
-  firstName: string;
-  lastName: string;
-  phone: string;
+interface DeliveryAddressDetails {
   country: string;
   streetAddress: string;
   apartment: string;
@@ -21,13 +18,18 @@ interface GuestDeliveryDetails {
   zipCode: string;
 }
 
+interface GuestDeliveryDetails extends DeliveryAddressDetails {
+  firstName: string;
+  lastName: string;
+  phone: string;
+}
+
+type DeliveryAddressField = keyof DeliveryAddressDetails;
 type GuestCheckoutField = keyof GuestDeliveryDetails | 'customerEmail';
+type DeliveryAddressValidationErrors = Partial<Record<DeliveryAddressField, string>>;
 type GuestValidationErrors = Partial<Record<GuestCheckoutField, string>>;
 
-const defaultGuestDeliveryDetails: GuestDeliveryDetails = {
-  firstName: '',
-  lastName: '',
-  phone: '',
+const defaultDeliveryAddressDetails: DeliveryAddressDetails = {
   country: 'United States',
   streetAddress: '',
   apartment: '',
@@ -36,21 +38,32 @@ const defaultGuestDeliveryDetails: GuestDeliveryDetails = {
   zipCode: '',
 };
 
+const defaultGuestDeliveryDetails: GuestDeliveryDetails = {
+  firstName: '',
+  lastName: '',
+  phone: '',
+  ...defaultDeliveryAddressDetails,
+};
+
+const deliveryAddressRequiredFields: DeliveryAddressField[] = [
+  'streetAddress',
+  'city',
+  'state',
+  'zipCode',
+  'country',
+];
+
 const guestRequiredFields: GuestCheckoutField[] = [
   'customerEmail',
   'firstName',
   'lastName',
   'phone',
-  'country',
-  'streetAddress',
-  'city',
-  'state',
-  'zipCode',
+  ...deliveryAddressRequiredFields,
 ];
 
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-const buildGuestShippingAddress = (details: GuestDeliveryDetails): string => {
+const buildShippingAddress = (details: DeliveryAddressDetails): string => {
   const streetLine = [details.streetAddress.trim(), details.apartment.trim()]
     .filter(Boolean)
     .join(', ');
@@ -64,6 +77,34 @@ const buildGuestShippingAddress = (details: GuestDeliveryDetails): string => {
   return [streetLine, cityLine, details.country.trim()]
     .filter(Boolean)
     .join(', ');
+};
+
+const getDeliveryAddressErrors = (
+  details: DeliveryAddressDetails,
+): DeliveryAddressValidationErrors => {
+  const errors: DeliveryAddressValidationErrors = {};
+
+  if (!details.streetAddress.trim()) {
+    errors.streetAddress = 'Street address is required.';
+  }
+
+  if (!details.city.trim()) {
+    errors.city = 'City is required.';
+  }
+
+  if (!details.state.trim()) {
+    errors.state = 'State is required.';
+  }
+
+  if (!details.zipCode.trim()) {
+    errors.zipCode = 'ZIP code is required.';
+  }
+
+  if (!details.country.trim()) {
+    errors.country = 'Country or region is required.';
+  }
+
+  return errors;
 };
 
 const getGuestCheckoutErrors = (
@@ -91,27 +132,10 @@ const getGuestCheckoutErrors = (
     errors.phone = 'Phone number is required.';
   }
 
-  if (!details.country.trim()) {
-    errors.country = 'Country or region is required.';
-  }
-
-  if (!details.streetAddress.trim()) {
-    errors.streetAddress = 'Street address is required.';
-  }
-
-  if (!details.city.trim()) {
-    errors.city = 'City is required.';
-  }
-
-  if (!details.state.trim()) {
-    errors.state = 'State is required.';
-  }
-
-  if (!details.zipCode.trim()) {
-    errors.zipCode = 'ZIP code is required.';
-  }
-
-  return errors;
+  return {
+    ...errors,
+    ...getDeliveryAddressErrors(details),
+  };
 };
 
 const CheckoutPage: FC = () => {
@@ -121,8 +145,13 @@ const CheckoutPage: FC = () => {
   const { items, itemCount, subtotal, finalizeCheckout } = useCart();
   const [checkoutMode, setCheckoutMode] = useState<CheckoutMode>(isAuthenticated ? 'account' : 'choice');
   const [customerEmail, setCustomerEmail] = useState('');
-  const [shippingAddress, setShippingAddress] = useState('');
+  const [deliveryAddressDetails, setDeliveryAddressDetails] = useState<DeliveryAddressDetails>(
+    defaultDeliveryAddressDetails,
+  );
   const [guestDeliveryDetails, setGuestDeliveryDetails] = useState<GuestDeliveryDetails>(defaultGuestDeliveryDetails);
+  const [touchedDeliveryAddressFields, setTouchedDeliveryAddressFields] = useState<
+    Partial<Record<DeliveryAddressField, boolean>>
+  >({});
   const [touchedGuestFields, setTouchedGuestFields] = useState<Partial<Record<GuestCheckoutField, boolean>>>({});
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -132,9 +161,19 @@ const CheckoutPage: FC = () => {
     setCheckoutMode(isAuthenticated ? 'account' : 'choice');
   }, [isAuthenticated]);
 
+  const deliveryShippingAddress = useMemo(
+    () => buildShippingAddress(deliveryAddressDetails),
+    [deliveryAddressDetails],
+  );
+
   const guestShippingAddress = useMemo(
-    () => buildGuestShippingAddress(guestDeliveryDetails),
+    () => buildShippingAddress(guestDeliveryDetails),
     [guestDeliveryDetails],
+  );
+
+  const deliveryAddressValidationErrors = useMemo(
+    () => getDeliveryAddressErrors(deliveryAddressDetails),
+    [deliveryAddressDetails],
   );
 
   const guestValidationErrors = useMemo(
@@ -142,6 +181,7 @@ const CheckoutPage: FC = () => {
     [customerEmail, guestDeliveryDetails],
   );
 
+  const hasDeliveryAddressValidationErrors = Object.keys(deliveryAddressValidationErrors).length > 0;
   const hasGuestValidationErrors = Object.keys(guestValidationErrors).length > 0;
 
   const canPlaceOrder = useMemo(() => {
@@ -153,13 +193,19 @@ const CheckoutPage: FC = () => {
       return !hasGuestValidationErrors && guestShippingAddress.length > 0;
     }
 
-    return shippingAddress.trim().length > 0;
+    if (!isAuthenticated) {
+      return false;
+    }
+
+    return !hasDeliveryAddressValidationErrors && deliveryShippingAddress.length > 0;
   }, [
+    deliveryShippingAddress,
     guestShippingAddress,
+    hasDeliveryAddressValidationErrors,
     hasGuestValidationErrors,
+    isAuthenticated,
     isGuestCheckout,
     items.length,
-    shippingAddress,
     isSubmitting,
   ]);
 
@@ -361,40 +407,6 @@ const CheckoutPage: FC = () => {
       fontSize: '24px',
       alignItems: 'baseline',
     },
-    label: {
-      display: 'block',
-      marginBottom: '8px',
-      fontSize: '14px',
-      fontWeight: 600,
-      color: '#333',
-    },
-    input: {
-      width: '100%',
-      borderRadius: '8px',
-      border: '1px solid #d6d6d6',
-      padding: '13px 14px',
-      fontSize: '15px',
-      fontFamily: 'inherit',
-      boxSizing: 'border-box',
-      marginBottom: '18px',
-      transition: 'border-color 0.2s ease, box-shadow 0.2s ease',
-      outline: 'none',
-      backgroundColor: '#fff',
-    },
-    textarea: {
-      width: '100%',
-      minHeight: '146px',
-      borderRadius: '8px',
-      border: '1px solid #d6d6d6',
-      padding: '13px 14px',
-      fontSize: '15px',
-      fontFamily: 'inherit',
-      resize: 'vertical',
-      boxSizing: 'border-box',
-      transition: 'border-color 0.2s ease, box-shadow 0.2s ease',
-      outline: 'none',
-      backgroundColor: '#fff',
-    },
     error: {
       margin: '14px 0 0',
       fontSize: '14px',
@@ -467,7 +479,7 @@ const CheckoutPage: FC = () => {
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>): Promise<void> => {
     event.preventDefault();
-    const address = isGuestCheckout ? guestShippingAddress : shippingAddress.trim();
+    const address = isGuestCheckout ? guestShippingAddress : deliveryShippingAddress;
     const email = customerEmail.trim();
 
     if (isGuestCheckout) {
@@ -485,6 +497,21 @@ const CheckoutPage: FC = () => {
       }
     }
 
+    if (!isGuestCheckout) {
+      const validationErrors = getDeliveryAddressErrors(deliveryAddressDetails);
+
+      if (Object.keys(validationErrors).length > 0) {
+        setTouchedDeliveryAddressFields(
+          deliveryAddressRequiredFields.reduce<Partial<Record<DeliveryAddressField, boolean>>>((fields, field) => {
+            fields[field] = true;
+            return fields;
+          }, {}),
+        );
+        setError('Please complete the highlighted delivery details.');
+        return;
+      }
+    }
+
     if (!address) {
       setError('Shipping address is required.');
       return;
@@ -496,10 +523,8 @@ const CheckoutPage: FC = () => {
     try {
       const order = await placeOrder({
         shippingAddress: address,
-        customerEmail: isGuestCheckout ? email : undefined,
-        items: isGuestCheckout
-          ? items.map((item) => ({ productId: item.id, quantity: item.quantity }))
-          : undefined,
+        items: items.map((item) => ({ productId: item.id, quantity: item.quantity })),
+        ...(isGuestCheckout ? { customerEmail: email } : {}),
       });
       await finalizeCheckout();
       navigate('/order-confirmation', { state: { order }, replace: true });
@@ -536,14 +561,19 @@ const CheckoutPage: FC = () => {
     },
   };
 
-  const applyFieldFocus = (element: HTMLInputElement | HTMLTextAreaElement): void => {
-    element.style.borderColor = '#BB0000';
-    element.style.boxShadow = '0 0 0 3px rgba(187, 0, 0, 0.1)';
+  const markDeliveryAddressFieldTouched = (field: DeliveryAddressField): void => {
+    setTouchedDeliveryAddressFields((currentFields) => ({
+      ...currentFields,
+      [field]: true,
+    }));
   };
 
-  const clearFieldFocus = (element: HTMLInputElement | HTMLTextAreaElement): void => {
-    element.style.borderColor = '#d6d6d6';
-    element.style.boxShadow = 'none';
+  const updateDeliveryAddressDetail = (field: DeliveryAddressField, value: string): void => {
+    setDeliveryAddressDetails((currentDetails) => ({
+      ...currentDetails,
+      [field]: value,
+    }));
+    setError(null);
   };
 
   const markGuestFieldTouched = (field: GuestCheckoutField): void => {
@@ -564,6 +594,26 @@ const CheckoutPage: FC = () => {
   const updateCustomerEmail = (value: string): void => {
     setCustomerEmail(value);
     setError(null);
+  };
+
+  const getDeliveryAddressFieldError = (field: DeliveryAddressField): string | undefined => (
+    touchedDeliveryAddressFields[field] ? deliveryAddressValidationErrors[field] : undefined
+  );
+
+  const getDeliveryAddressFieldErrorId = (field: DeliveryAddressField): string => `delivery-${field}-error`;
+
+  const renderDeliveryAddressFieldError = (field: DeliveryAddressField): JSX.Element | null => {
+    const fieldError = getDeliveryAddressFieldError(field);
+
+    if (!fieldError) {
+      return null;
+    }
+
+    return (
+      <p id={getDeliveryAddressFieldErrorId(field)} className="checkout-field-error">
+        {fieldError}
+      </p>
+    );
   };
 
   const getGuestFieldError = (field: GuestCheckoutField): string | undefined => (
@@ -669,9 +719,11 @@ const CheckoutPage: FC = () => {
               <section style={styles.card}>
                 <div style={styles.panelTitleRow}>
                   <div>
-                    <p style={styles.panelKicker}>{isGuestCheckout ? 'Guest checkout' : 'Delivery details'}</p>
+                    <p style={styles.panelKicker}>
+                      {isGuestCheckout ? 'Guest checkout' : isAuthenticated ? 'Account checkout' : 'Delivery details'}
+                    </p>
                     <h2 style={styles.sectionTitle}>
-                      {isGuestCheckout ? 'Guest Checkout Details' : 'Shipping Address'}
+                      {isGuestCheckout ? 'Guest Checkout Details' : isAuthenticated ? 'Checkout Details' : 'Shipping Address'}
                     </h2>
                   </div>
                 </div>
@@ -929,31 +981,161 @@ const CheckoutPage: FC = () => {
                         </section>
                       </div>
                     ) : (
-                      <>
-                        <label htmlFor="shipping-address" style={styles.label}>Enter full delivery address</label>
-                        <textarea
-                          id="shipping-address"
-                          name="shippingAddress"
-                          value={shippingAddress}
-                          onChange={(event) => {
-                            setShippingAddress(event.target.value);
-                            setError(null);
-                          }}
-                          onFocus={(event) => applyFieldFocus(event.currentTarget)}
-                          onBlur={(event) => clearFieldFocus(event.currentTarget)}
-                          style={styles.textarea}
-                          placeholder="1739 N High St, Columbus, OH 43210"
-                          autoComplete="shipping street-address"
-                          maxLength={500}
-                          required
-                        />
-                      </>
+                      <div className="checkout-form">
+                        <section className="checkout-form-section" aria-labelledby="account-delivery-details-heading">
+                          <div className="checkout-form-section-header">
+                            <p className="checkout-form-kicker">Delivery details</p>
+                            <h3 id="account-delivery-details-heading" className="checkout-form-title">
+                              Shipping address
+                            </h3>
+                          </div>
+
+                          <div className="checkout-field-grid">
+                            <div className="checkout-field">
+                              <label htmlFor="account-street-address" className="checkout-field-label">
+                                Street address <span className="checkout-required" aria-hidden="true">*</span>
+                              </label>
+                              <input
+                                id="account-street-address"
+                                name="streetAddress"
+                                type="text"
+                                value={deliveryAddressDetails.streetAddress}
+                                onChange={(event) => updateDeliveryAddressDetail('streetAddress', event.target.value)}
+                                onBlur={() => markDeliveryAddressFieldTouched('streetAddress')}
+                                className={`checkout-field-control${getDeliveryAddressFieldError('streetAddress') ? ' has-error' : ''}`}
+                                placeholder="123 High St"
+                                autoComplete="shipping address-line1"
+                                maxLength={160}
+                                required
+                                aria-invalid={Boolean(getDeliveryAddressFieldError('streetAddress'))}
+                                aria-describedby={getDeliveryAddressFieldError('streetAddress') ? getDeliveryAddressFieldErrorId('streetAddress') : undefined}
+                              />
+                              {renderDeliveryAddressFieldError('streetAddress')}
+                            </div>
+                          </div>
+
+                          <div className="checkout-field-grid">
+                            <div className="checkout-field">
+                              <label htmlFor="account-apartment" className="checkout-field-label">
+                                Apartment, suite, unit <span className="checkout-optional">optional</span>
+                              </label>
+                              <input
+                                id="account-apartment"
+                                name="apartment"
+                                type="text"
+                                value={deliveryAddressDetails.apartment}
+                                onChange={(event) => updateDeliveryAddressDetail('apartment', event.target.value)}
+                                className="checkout-field-control"
+                                placeholder="Apt 4B"
+                                autoComplete="shipping address-line2"
+                                maxLength={80}
+                              />
+                            </div>
+                          </div>
+
+                          <div className="checkout-field-grid checkout-field-grid-three">
+                            <div className="checkout-field">
+                              <label htmlFor="account-city" className="checkout-field-label">
+                                City <span className="checkout-required" aria-hidden="true">*</span>
+                              </label>
+                              <input
+                                id="account-city"
+                                name="city"
+                                type="text"
+                                value={deliveryAddressDetails.city}
+                                onChange={(event) => updateDeliveryAddressDetail('city', event.target.value)}
+                                onBlur={() => markDeliveryAddressFieldTouched('city')}
+                                className={`checkout-field-control${getDeliveryAddressFieldError('city') ? ' has-error' : ''}`}
+                                placeholder="Columbus"
+                                autoComplete="shipping address-level2"
+                                maxLength={80}
+                                required
+                                aria-invalid={Boolean(getDeliveryAddressFieldError('city'))}
+                                aria-describedby={getDeliveryAddressFieldError('city') ? getDeliveryAddressFieldErrorId('city') : undefined}
+                              />
+                              {renderDeliveryAddressFieldError('city')}
+                            </div>
+
+                            <div className="checkout-field">
+                              <label htmlFor="account-state" className="checkout-field-label">
+                                State <span className="checkout-required" aria-hidden="true">*</span>
+                              </label>
+                              <input
+                                id="account-state"
+                                name="state"
+                                type="text"
+                                value={deliveryAddressDetails.state}
+                                onChange={(event) => updateDeliveryAddressDetail('state', event.target.value)}
+                                onBlur={() => markDeliveryAddressFieldTouched('state')}
+                                className={`checkout-field-control${getDeliveryAddressFieldError('state') ? ' has-error' : ''}`}
+                                placeholder="OH"
+                                autoComplete="shipping address-level1"
+                                maxLength={32}
+                                required
+                                aria-invalid={Boolean(getDeliveryAddressFieldError('state'))}
+                                aria-describedby={getDeliveryAddressFieldError('state') ? getDeliveryAddressFieldErrorId('state') : undefined}
+                              />
+                              {renderDeliveryAddressFieldError('state')}
+                            </div>
+
+                            <div className="checkout-field">
+                              <label htmlFor="account-zip-code" className="checkout-field-label">
+                                ZIP code <span className="checkout-required" aria-hidden="true">*</span>
+                              </label>
+                              <input
+                                id="account-zip-code"
+                                name="zipCode"
+                                type="text"
+                                value={deliveryAddressDetails.zipCode}
+                                onChange={(event) => updateDeliveryAddressDetail('zipCode', event.target.value)}
+                                onBlur={() => markDeliveryAddressFieldTouched('zipCode')}
+                                className={`checkout-field-control${getDeliveryAddressFieldError('zipCode') ? ' has-error' : ''}`}
+                                placeholder="43210"
+                                autoComplete="shipping postal-code"
+                                maxLength={20}
+                                required
+                                aria-invalid={Boolean(getDeliveryAddressFieldError('zipCode'))}
+                                aria-describedby={getDeliveryAddressFieldError('zipCode') ? getDeliveryAddressFieldErrorId('zipCode') : undefined}
+                              />
+                              {renderDeliveryAddressFieldError('zipCode')}
+                            </div>
+                          </div>
+
+                          <div className="checkout-field-grid">
+                            <div className="checkout-field">
+                              <label htmlFor="account-country" className="checkout-field-label">
+                                Country/Region <span className="checkout-required" aria-hidden="true">*</span>
+                              </label>
+                              <input
+                                id="account-country"
+                                name="country"
+                                type="text"
+                                value={deliveryAddressDetails.country}
+                                onChange={(event) => updateDeliveryAddressDetail('country', event.target.value)}
+                                onBlur={() => markDeliveryAddressFieldTouched('country')}
+                                className={`checkout-field-control${getDeliveryAddressFieldError('country') ? ' has-error' : ''}`}
+                                autoComplete="shipping country-name"
+                                maxLength={80}
+                                required
+                                aria-invalid={Boolean(getDeliveryAddressFieldError('country'))}
+                                aria-describedby={getDeliveryAddressFieldError('country') ? getDeliveryAddressFieldErrorId('country') : undefined}
+                              />
+                              {renderDeliveryAddressFieldError('country')}
+                            </div>
+                          </div>
+                        </section>
+                      </div>
                     )}
 
                     {error && <p style={styles.error}>{error}</p>}
                     {isGuestCheckout && !canPlaceOrder && !isSubmitting && (
                       <p className="checkout-submit-note">
                         Complete all required fields and use a valid email to place your guest order.
+                      </p>
+                    )}
+                    {isAuthenticated && !isGuestCheckout && !canPlaceOrder && !isSubmitting && (
+                      <p className="checkout-submit-note">
+                        Complete all required delivery fields to place your order.
                       </p>
                     )}
 
