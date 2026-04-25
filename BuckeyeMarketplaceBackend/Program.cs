@@ -207,7 +207,11 @@ using (var scope = app.Services.CreateScope())
     var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
     var configuration = scope.ServiceProvider.GetRequiredService<IConfiguration>();
 
-    if (dbContext.Database.IsRelational())
+    if (string.Equals(dbContext.Database.ProviderName, "Microsoft.EntityFrameworkCore.Sqlite", StringComparison.Ordinal))
+    {
+        dbContext.Database.EnsureCreated();
+    }
+    else if (dbContext.Database.IsRelational())
     {
         dbContext.Database.Migrate();
     }

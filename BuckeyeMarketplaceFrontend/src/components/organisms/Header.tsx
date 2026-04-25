@@ -26,6 +26,7 @@ const Header: FC = () => {
       alignItems: 'center',
       justifyContent: 'space-between',
       gap: '20px',
+      flexWrap: 'wrap',
     },
     logo: {
       fontSize: '20px',
@@ -40,8 +41,9 @@ const Header: FC = () => {
       fontFamily: 'inherit',
     },
     searchContainer: {
-      flex: 1,
+      flex: '1 1 280px',
       maxWidth: '500px',
+      minWidth: 'min(100%, 220px)',
     },
     searchInput: {
       width: '100%',
@@ -60,8 +62,11 @@ const Header: FC = () => {
     icons: {
       display: 'flex',
       gap: '16px',
-      minWidth: 'fit-content',
+      minWidth: 0,
       alignItems: 'center',
+      justifyContent: 'flex-end',
+      flex: '1 1 auto',
+      flexWrap: 'wrap',
     },
     iconButton: {
       background: 'none',
@@ -86,10 +91,12 @@ const Header: FC = () => {
     authLinks: {
       display: 'flex',
       alignItems: 'center',
+      justifyContent: 'flex-end',
       gap: '6px',
       color: '#444',
       fontSize: '14px',
       fontWeight: '600',
+      flexWrap: 'wrap',
     },
     logoutButton: {
       border: 'none',
