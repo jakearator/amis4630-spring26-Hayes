@@ -1,37 +1,37 @@
-import { FC, CSSProperties } from 'react';
+import { FC } from 'react';
 
-const Hero: FC = () => {
-  const styles: Record<string, CSSProperties> = {
-    hero: {
-      backgroundColor: 'white',
-      padding: '60px 20px',
-      textAlign: 'center',
-      borderBottom: '1px solid #e5e5e5',
-    },
-    container: {
-      maxWidth: '1200px',
-      margin: '0 auto',
-    },
-    title: {
-      fontSize: '44px',
-      fontWeight: '700',
-      color: '#1a1a1a',
-      marginBottom: '12px',
-      letterSpacing: '-0.5px',
-    },
-    subtitle: {
-      fontSize: '18px',
-      color: '#666',
-      fontWeight: '400',
-      lineHeight: '1.6',
-    },
-  };
+interface HeroProps {
+  onStartShopping?: () => void;
+}
 
+interface IconProps {
+  className?: string;
+}
+
+const ArrowRightIcon: FC<IconProps> = ({ className }) => (
+  <svg className={className} viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+    <path d="M5 12h14" />
+    <path d="m13 6 6 6-6 6" />
+  </svg>
+);
+
+const Hero: FC<HeroProps> = ({ onStartShopping }) => {
   return (
-    <section style={styles.hero}>
-      <div style={styles.container}>
-        <h1 style={styles.title}>Buckeye Marketplace</h1>
-        <p style={styles.subtitle}>Discover products from our community</p>
+    <section className="marketplace-hero" aria-labelledby="marketplace-hero-title">
+      <div className="marketplace-hero__inner">
+        <div className="marketplace-hero__content">
+          <p className="marketplace-hero__eyebrow">Buckeye Marketplace</p>
+          <h1 id="marketplace-hero-title">Find great campus essentials</h1>
+          <p className="marketplace-hero__copy">
+            Shop textbooks, electronics, furniture, clothing, and more for campus life.
+          </p>
+          <div className="marketplace-hero__actions">
+            <button type="button" className="marketplace-hero__cta" onClick={onStartShopping}>
+              <span>Browse Products</span>
+              <ArrowRightIcon className="marketplace-hero__cta-icon" />
+            </button>
+          </div>
+        </div>
       </div>
     </section>
   );
