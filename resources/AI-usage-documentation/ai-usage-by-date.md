@@ -41,11 +41,11 @@ Key is not stored in appsettings.json.
 Admin user seeded for testing
 Startup seed creates Admin role and admin user if missing.
 Seed logic in Program.cs.
-Documented credentials in README.md:
+Documented safe admin seed placeholders in README.md:
 
-Email: adminsecretnotellhaha
-Password: adminsecretnotellhaha
-Role: adminsecretnotellhaha
+SeedAdmin__Email=<your-admin-email>
+SeedAdmin__Password=<store-in-Azure-environment-variable>
+Role: Admin
 
 Refresh token mechanism (bonus)
 Implemented persistent refresh tokens with rotation/revocation.
@@ -1284,3 +1284,522 @@ Full-project tsc --noEmit still reports one unrelated pre-existing test issue at
 # (4/23/2026) LINK TO WEBSITE: ...
 
 # (4/23/2026) it's working... just having small bugs with making an account now since it's the first screen you see, working on those now.
+
+# (4/23/2026) adding guest checkout feature so guest don't need to sign in out all and removing having to sign in the first thing to get into the website or make an account right away then sign in
+
+prompt: 
+
+Update the app so users do NOT have to log in before accessing the marketplace, and allow guest checkout.
+
+Goal:
+
+* Visitors can browse the site without logging in.
+* Login is optional.
+* Users can choose to log in OR continue as a guest.
+* Checkout must support both logged-in users and guest users.
+
+Tasks:
+
+1. Inspect frontend routing/auth logic.
+2. Remove any global redirect that forces `/login` for unauthenticated users.
+3. Make these routes public:
+
+   * home
+   * products/catalog
+   * product details
+4. Keep protected functionality ONLY where necessary:
+
+   * user profile
+   * order history
+5. Add “guest mode” behavior:
+
+   * Users can add items to cart without logging in (store locally if needed).
+   * On checkout page, give two options:
+
+     * “Log in”
+     * “Checkout as Guest”
+6. For guest checkout:
+
+   * Allow order submission without authentication
+   * Require basic info (email, shipping address, etc.)
+   * Do NOT require JWT token
+7. Backend changes (if needed):
+
+   * Update OrdersController to allow unauthenticated requests
+   * Make UserId optional/null for guest orders
+   * Ensure validation still works
+8. Update UI:
+
+   * If logged out → show “Login / Create Account”
+   * If logged in → show cart/profile/logout
+   * Add clear “Checkout as Guest” button on checkout page
+9. Do NOT remove existing login/register/JWT functionality.
+10. Do NOT change unrelated UI/styling.
+11. Show a clear diff of all changes and explain them.
+12. Do not commit or push without review.
+
+Goal result:
+Users can browse immediately, choose to log in if they want, or complete a full purchase using “Checkout as Guest” without creating an account.
+
+answer:
+
+works
+
+# (4/23/2026) adding more security
+
+prompt:
+
+Perform a security-focused review and hardening pass for the new public browsing + guest checkout flow.
+
+CRITICAL RULES:
+
+* Do NOT remove login/register/JWT functionality.
+* Do NOT break guest checkout.
+* Do NOT change unrelated UI styling.
+* Do NOT trust frontend values for security-sensitive data.
+* Show the diff before committing or pushing.
+
+Security goals:
+
+1. Guest checkout should be allowed, but safe.
+2. Logged-in users should only access their own carts/orders.
+3. Guests should not be able to spoof another user.
+4. Product prices/totals must always be calculated on the backend.
+5. Secrets must stay out of source control.
+
+Backend tasks:
+
+1. Review all checkout/order/cart endpoints.
+2. Ensure guest checkout does NOT accept `UserId` from the request body.
+
+   * For logged-in users, derive user ID from JWT claims.
+   * For guests, store guest email/shipping info, but keep user ownership nullable or clearly guest-based.
+3. Validate all guest checkout input:
+
+   * email required and valid
+   * shipping address required
+   * quantities must be positive
+   * products must exist
+   * cart/order cannot be empty
+4. Ensure order totals are calculated from database product prices.
+
+   * Do NOT accept subtotal/total/price from frontend request as trusted.
+5. Ensure users cannot view or modify another user’s cart/orders.
+6. Ensure error responses are user-friendly and do not expose stack traces.
+7. Confirm `Jwt__Key` / connection strings are not committed in appsettings or env files.
+
+Frontend tasks:
+
+1. Make sure frontend does not send trusted price/total/userId values for checkout.
+2. Guest checkout form should collect only necessary info:
+
+   * guest email
+   * shipping address
+3. If logged out, show optional login/create account, but do not force it.
+4. If backend returns validation errors, show a clean user-facing message.
+
+Optional but good:
+
+1. Add simple server-side validation attributes or FluentValidation if already used.
+2. Add basic logging for checkout failures without logging secrets.
+3. Add comments only where helpful.
+
+Verification:
+
+1. Run backend build.
+2. Run frontend build.
+3. Summarize:
+
+   * files changed
+   * security issues fixed
+   * any remaining risks
+   * whether it is safe to commit/push/deploy
+
+Do not commit or push. Show me the diff and summary first.
+
+answer:
+
+Security Summary
+Fixed:
+
+Guest checkout cannot set order ownership from request body.
+Logged-in cart/order access remains claim-scoped to the JWT user.
+Guest spoof attempts using extra checkout fields like userId / total are rejected.
+Order totals are verified from DB product prices, not frontend totals.
+Backend validation now covers guest email, shipping address, positive quantities, missing products, and empty carts/orders.
+Unhandled backend failures now return safe JSON instead of leaking internals.
+Hardcoded admin seed credentials are gone from source, and the backend connection string was removed from committed appsettings.json.
+
+# (4/25/2026) adjusting the UI look of the cart, used pictures as well to give it a better reference of how I want the UI to look.
+
+prompt used: 
+
+Update the checkout page UI to look more polished and modern, inspired by a clean ecommerce checkout layout, while keeping the Buckeye Marketplace red/white/black color theme.
+
+Important:
+
+* Do NOT remove the current checkout logic.
+* Do NOT break guest checkout.
+* Do NOT remove the choice between:
+
+  * Log In
+  * Create Account
+  * Checkout as Guest
+* Do NOT change backend/API logic.
+* Only improve the frontend checkout page layout and styling.
+
+Target design direction:
+
+* Make the checkout page feel more like a professional ecommerce checkout.
+* Use a centered checkout container/card.
+* Use a cleaner two-column layout:
+
+  * Left side: customer/guest/login/shipping details
+  * Right side: order summary
+* Keep the red theme for buttons, totals, badges, and highlights.
+* Use white cards, subtle borders, soft shadows, and clean spacing.
+* Make the “Choose How to Continue” section feel like selectable cards or segmented buttons instead of plain buttons.
+* When “Checkout as Guest” is selected, show guest email + shipping fields clearly.
+* Keep the order summary visible and easy to read.
+* Keep the item count badge.
+* Keep “Back to Cart” and “Place Guest Order” buttons.
+* Make the layout responsive for smaller screens.
+
+Specific UI changes:
+
+1. Add a checkout progress/header feel, such as:
+
+   * Cart → Checkout → Confirmation
+   * Current step highlighted in red
+2. Redesign the top checkout card:
+
+   * Title: Checkout
+   * Subtitle: Review your order and complete your delivery details.
+   * Badge showing item count
+3. Redesign the login/create/guest choice section:
+
+   * Use three selectable option cards or clean pill buttons
+   * Clearly show selected state using red border/background
+4. Redesign the guest checkout form:
+
+   * Label fields clearly
+   * Use better spacing
+   * Use placeholder examples
+   * Show disabled Place Order button until required fields are filled
+5. Redesign the order summary:
+
+   * Product title, quantity, item price
+   * Subtotal, shipping, total
+   * Total should be bold and red
+6. Keep the existing Buckeye red button style:
+
+   * primary red button
+   * white text
+   * hover effect if already used
+7. Do not introduce new libraries unless absolutely necessary.
+
+Files likely involved:
+
+* BuckeyeMarketplaceFrontend/src/pages/CheckoutPage.tsx
+* Any related CSS/module file if checkout styling is separated
+* Shared button/card components only if already used
+
+Verification:
+
+* npm run build must pass
+* Guest checkout still works
+* Logged-in checkout still works
+* Cart quantities/order summary still display correctly
+* Refreshing /checkout still works with Static Web Apps routing
+
+Output:
+
+* Show the diff
+* Summarize exactly what UI changed
+* Do NOT commit or push without review
+
+answer:
+
+UI Changed
+
+Added a checkout progress header: Cart > Checkout > Confirmation, with Checkout highlighted in red.
+Reworked the checkout shell into a centered, polished white card with subtle border/shadow.
+Moved checkout content into a cleaner two-column layout:
+Left: continue choice + customer/shipping form
+Right: sticky order summary on desktop
+Redesigned Log In, Create Account, and Checkout as Guest as selectable card-style controls.
+Guest mode now clearly shows email and shipping fields with improved labels/placeholders.
+Order summary now shows product title, quantity, per-item price, line total, subtotal, shipping, and red bold total.
+Added responsive CSS so the layout stacks cleanly on smaller screens.
+Verification
+
+npm run build was blocked by PowerShell execution policy for npm.ps1.
+npm.cmd run build passed successfully.
+Checkout/API logic was not changed: guest and logged-in placeOrder behavior remains intact.
+
+# (4/25/2026) making more adjustments to the UI--specifically the cart shipping address is just one big box, we want to seperate those.
+
+prompt:
+
+Update the guest checkout details section UI to look more like a standard ecommerce checkout form, while preserving the current guest checkout logic.
+
+Important:
+
+* Do NOT change backend/API logic.
+* Do NOT break guest checkout.
+* Do NOT require account creation.
+* Do NOT add payment processing.
+* Keep current order placement logic and request format unless a small frontend-only mapping is needed.
+* Keep Buckeye red/white theme.
+
+Current issue:
+The guest checkout form currently has only:
+
+* email
+* one large full delivery address textarea
+
+Desired UI:
+Make it look more like a structured ecommerce checkout form with sections and individual fields.
+
+Use sections like:
+
+Customer details:
+
+* Email for order confirmation *
+* First name *
+* Last name *
+* Phone *
+
+Delivery details:
+
+* Country/Region *
+* Street address *
+* Apartment, suite, unit, etc. optional
+* City *
+* State *
+* ZIP code *
+
+Logic requirement:
+
+* The backend can still receive the same existing `shippingAddress` value.
+* Build `shippingAddress` on the frontend by combining the structured delivery fields into one formatted string.
+* Example:
+  `123 High St, Apt 4B, Columbus, OH 43210, United States`
+* Continue sending guest email as the existing guest/customer email field.
+* Do not send extra fields to backend unless the existing request model already supports them.
+
+Validation:
+
+* Required fields must be filled before enabling “Place Guest Order”
+* Email must be valid format
+* Phone can be basic required text validation only
+* ZIP code required
+* Apartment/suite optional
+* Show clear friendly validation messages
+
+UI style:
+
+* Clean vertical form layout like a modern checkout page
+* Smaller labels above inputs
+* Inputs should align nicely
+* Use two-column rows where appropriate:
+
+  * First name / Last name
+  * City / State / ZIP
+* Keep mobile responsive
+* Keep red accents for section labels, errors, and primary buttons
+* Keep existing error message styling but make it polished
+
+Files likely involved:
+
+* BuckeyeMarketplaceFrontend/src/pages/CheckoutPage.tsx
+* Any checkout CSS if styling is separated
+
+Verification:
+
+* npm run build passes
+* Guest checkout still sends:
+
+  * customerEmail / guest email
+  * shippingAddress as one combined string
+  * cart items as productId + quantity
+* Logged-in checkout still works
+* Checkout as Guest flow still works
+* No backend changes unless absolutely necessary
+
+Output:
+
+* Show the diff
+* Summarize exactly what changed
+* Do NOT commit or push without review
+
+answer:
+
+CheckoutPage.tsx
++ Added structured guest checkout state for first/last name, phone, country,
++ street, apartment, city, state, and ZIP.
++ Added guest validation with friendly field messages and email format checking.
++ Added buildGuestShippingAddress(...)
+- const address = shippingAddress.trim();
++ const address = isGuestCheckout ? guestShippingAddress : shippingAddress.trim();
+
++ Guest UI now renders:
++   Customer details
++   Delivery details
++ Logged-in checkout still uses the existing shipping address textarea.
++ placeOrder still sends only:
++   shippingAddress
++   customerEmail for guests
++   items: [{ productId, quantity }] for guests
+
+CheckoutPage.css
++ Added responsive checkout form layout styles.
++ Added two-column first/last name row.
++ Added three-column city/state/ZIP row, collapsing on mobile.
++ Added Buckeye red focus, required, and error styles.
+
+Exactly changed:
+
+Updated CheckoutPage.tsx (line 12) to build the existing shippingAddress from structured guest delivery fields.
+Updated CheckoutPage.css (line 94) with the modern checkout form layout and responsive styling.
+Did not change backend/API logic.
+Did not add payment processing.
+Did not require account creation.
+Did not commit or push.
+Verification:
+
+npm.cmd run build passes.
+Extra tsc --noEmit check is blocked by an existing test typing issue: src/__tests__/LoginPage.test.tsx(20,3): Cannot find name 'beforeEach'
+
+# (4/25/2026) backend logic not allowing you to complete the checkout process in testing phase--attempting fix
+
+problem is most likely that the guest checkout doesn't have the available Database information/there isn't any for it... adjusting probably has this UI needs to look better. 
+
+solution was:
+
+The error is clear now:
+
+SQLite Error: table Orders has no column named CustomerEmail
+
+Your local SQLite database is old. Your code now expects the new CustomerEmail column, but your local DB file was created before guest checkout.
+
+Fix local database
+
+Stop the backend first:
+
+Ctrl + C
+
+Then from the backend folder run:
+
+Remove-Item .\buckeye-marketplace.db -Force -ErrorAction SilentlyContinue
+dotnet run
+
+That lets the app recreate the local SQLite database with the updated schema.
+
+Then test checkout again.
+
+Important
+
+This is only a local dev issue. Azure SQL should be fine if migrations are applied there.
+
+It was just a local dev thing.
+
+# (4/25/2026) adjusting logic/UI look for SIGN-INed users so they have a similar look to what guest people have.
+
+prompt: 
+
+Update the **logged-in checkout UI** so the shipping section matches the new guest checkout design, while only including the fields needed for authenticated users.
+
+Important:
+
+* Do NOT change backend logic.
+* Do NOT break authenticated checkout.
+* Do NOT require guest fields (email, first name, last name, phone).
+* Keep using the existing request format (shippingAddress + items).
+* Only improve UI consistency and validation.
+
+Goal:
+Make the logged-in checkout form visually consistent with the new structured guest checkout form.
+
+UI Requirements:
+
+1. Replace the single textarea with structured fields (same style as guest):
+   Delivery details:
+
+   * Street address *
+   * Apartment, suite, unit (optional)
+   * City *
+   * State *
+   * ZIP code *
+   * Country/Region *
+
+2. Layout:
+
+   * Use same styling as guest checkout (clean inputs, spacing, labels)
+   * Two-column layout where appropriate:
+
+     * City / State / ZIP
+   * Match fonts, borders, spacing, and section headers
+   * Keep “Delivery details” header styling consistent
+
+3. Logic:
+
+   * Combine all fields into ONE string for backend:
+     Example:
+     "123 High St, Apt 2, Columbus, OH 43210, United States"
+   * Continue sending:
+
+     * shippingAddress (combined string)
+     * items
+   * Do NOT send new fields to backend
+
+4. Validation:
+
+   * Required fields must be filled before enabling “Place Order”
+   * ZIP required
+   * Street required
+   * City/State required
+   * Country required
+   * Apartment optional
+   * Show clean validation errors
+
+5. Button behavior:
+
+   * Enable “Place Order” only when form is valid
+   * Keep existing red button styling
+
+6. UX:
+
+   * Pre-fill fields if user has saved address (if already supported)
+   * If not, leave blank but clean
+   * Maintain responsive layout
+
+Files likely involved:
+
+* BuckeyeMarketplaceFrontend/src/pages/CheckoutPage.tsx
+* CheckoutPage.css (or equivalent styling file)
+
+Verification:
+
+* npm run build passes
+* Logged-in checkout still works
+* Order submits successfully
+* Payload still contains only:
+
+  * shippingAddress (string)
+  * items
+* Guest checkout remains unchanged
+
+Output:
+
+* Show diff
+* Summarize UI changes
+* Do NOT commit or push without review
+
+answer:
+
+The logged-in checkout now uses the same structured guest-checkout styling: clean labeled inputs, the existing delivery section header style, City/State/ZIP grid layout, responsive behavior, and field-level validation.
+
+For authenticated users, the form only requires street, city, state, ZIP, and country. Apartment is optional. It combines those fields into one backend string like 123 High St, Apt 2, Columbus, OH 43210, United States.
+
+Authenticated submit payload now contains only shippingAddress and items. Guest checkout UI remains unchanged, and guest submit still includes customerEmail.

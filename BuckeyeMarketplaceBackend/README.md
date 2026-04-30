@@ -146,10 +146,10 @@ At runtime, `Program.cs` also runs `Database.Migrate()` so schema updates are au
 
 Products are inserted via `HasData(...)` in `OnModelCreating`.
 
-Admin user is seeded at startup in `Program.cs` (created if missing):
+Admin user seeding is configured outside source control and created at startup if provided:
 
-- Email: `admin@buckeyemarketplace.local`
-- Password: `Admin1234`
+- `SeedAdmin__Email=<your-admin-email>`
+- `SeedAdmin__Password=<store-in-Azure-environment-variable>`
 - Role: `Admin`
 
 ## API Endpoints

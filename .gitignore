@@ -10,6 +10,7 @@
 .DS_Store
 
 # Logs
+**/logs/
 *.log
 npm-debug.log*
 yarn-debug.log*
@@ -31,6 +32,12 @@ pnpm-debug.log*
 
 # Local development databases
 *.db
+*.sqlite
+*.sqlite3
+*.sqlite-shm
+*.sqlite-wal
+*.sqlite3-shm
+*.sqlite3-wal
 
 # -----------------------------
 # Frontend artifacts
@@ -53,3 +60,24 @@ pnpm-debug.log*
 
 publish/
 deploy.zip
+
+# Azure / publish secrets
+*.PublishSettings
+*.pubxml
+
+# Keys / certificates
+*.pem
+*.key
+*.pfx
+*.p12
+*.cer
+*.crt
+id_rsa
+id_dsa
+id_ecdsa
+id_ed25519
+
+# Secret/config files
+**/secrets.json
+*credentials*.json
+*service-account*.json
