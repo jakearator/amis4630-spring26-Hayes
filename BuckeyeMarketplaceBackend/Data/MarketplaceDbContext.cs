@@ -181,12 +181,12 @@ namespace BuckeyeMarketplaceBackend.Data
                 {
                     Id = 1,
                     Title = "Calculus 1 Textbook (Math 1151)",
-                    Description = "Used Calculus textbook in excellent condition. Covers limits, derivatives, and integrals. No highlighting or damage.",
+                    Description = "Calculus 1 textbook/course material for Math 1151. Useful for homework, studying, and exam review.",
                     Price = 89.99m,
                     Category = "Textbooks",
                     Brand = "Pearson",
                     PostedDate = new DateTime(2026, 3, 1),
-                    ImageUrl = "https://images.unsplash.com/photo-1543002588-d83ceddf1f7f?w=800&auto=format&fit=crop&q=80",
+                    ImageUrl = "/assets/product-fallbacks/textbooks.png",
                     IsAvailable = true,
                     StockQuantity = 5
                 },
@@ -194,12 +194,12 @@ namespace BuckeyeMarketplaceBackend.Data
                 {
                     Id = 2,
                     Title = "Physics 1200 Lab Manual & Textbook Bundle",
-                    Description = "Complete Physics 1200 course materials. Lab manual with notes included. Barely used, like new condition.",
+                    Description = "Physics 1200 textbook and lab manual bundle. Useful for lab prep, homework, and class reference.",
                     Price = 125.00m,
                     Category = "Textbooks",
                     Brand = "McGraw-Hill",
                     PostedDate = new DateTime(2026, 2, 28),
-                    ImageUrl = "https://images.unsplash.com/photo-1507842872343-583f20270319?w=800&auto=format&fit=crop&q=80",
+                    ImageUrl = "/assets/product-fallbacks/textbooks.png",
                     IsAvailable = true,
                     StockQuantity = 2
                 },
@@ -207,12 +207,12 @@ namespace BuckeyeMarketplaceBackend.Data
                 {
                     Id = 3,
                     Title = "Ergonomic Laptop Stand",
-                    Description = "Adjustable aluminum laptop stand for improved ergonomics. Works with 11-17 inch laptops. Great for dorm desk setup.",
+                    Description = "Silver aluminum laptop stand with a raised fixed-angle platform. Fits a dorm desk or study setup.",
                     Price = 34.50m,
                     Category = "Electronics",
                     Brand = "Rain Design",
                     PostedDate = new DateTime(2026, 3, 2),
-                    ImageUrl = "https://images.pexels.com/photos/968631/pexels-photo-968631.jpeg",
+                    ImageUrl = "/assets/products/laptop-stand.jpg",
                     IsAvailable = true,
                     StockQuantity = 10
                 },
@@ -220,12 +220,12 @@ namespace BuckeyeMarketplaceBackend.Data
                 {
                     Id = 4,
                     Title = "Wireless Mouse & USB Receiver",
-                    Description = "Silent click wireless mouse with 2.4GHz connection. Long battery life. Perfect for studying or gaming.",
+                    Description = "Black Logitech wireless mouse with USB receiver. Compact option for class, studying, or office work.",
                     Price = 19.99m,
                     Category = "Electronics",
                     Brand = "Logitech",
                     PostedDate = new DateTime(2026, 2, 25),
-                    ImageUrl = "https://images.unsplash.com/photo-1587829191301-2dd0dfa42fa6?w=800&auto=format&fit=crop&q=80",
+                    ImageUrl = "/assets/products/wireless-mouse-usb-receiver.jpg",
                     IsAvailable = true,
                     StockQuantity = 0
                 },
@@ -233,12 +233,12 @@ namespace BuckeyeMarketplaceBackend.Data
                 {
                     Id = 5,
                     Title = "Compact Mini Fridge (3.2 cu ft)",
-                    Description = "Perfect dorm-sized mini fridge with freezer compartment. Energy efficient. Slightly used, works great.",
+                    Description = "Compact black beverage-style mini fridge with glass door and drink shelves. Good for dorm drinks or shared apartment space.",
                     Price = 79.99m,
                     Category = "Furniture",
                     Brand = "Frigidaire",
                     PostedDate = new DateTime(2026, 3, 3),
-                    ImageUrl = "https://images.unsplash.com/photo-1584568694244-14fbdf83bd30?w=800&auto=format&fit=crop&q=80",
+                    ImageUrl = "/assets/products/compact-mini-fridge.jpg",
                     IsAvailable = true,
                     StockQuantity = 3
                 },
@@ -246,12 +246,12 @@ namespace BuckeyeMarketplaceBackend.Data
                 {
                     Id = 6,
                     Title = "LED Desk Lamp with USB Charging",
-                    Description = "Adjustable brightness LED lamp with USB charging port built-in. Great for late-night studying. Modern design.",
+                    Description = "Black LED desk lamp with touch controls and a phone charging base. Useful for a dorm desk or nightstand.",
                     Price = 32.95m,
                     Category = "Furniture",
                     Brand = "BenQ",
                     PostedDate = new DateTime(2026, 2, 20),
-                    ImageUrl = "https://images.unsplash.com/photo-1565204666-9f1be4d60001?w=800&auto=format&fit=crop&q=80",
+                    ImageUrl = "/assets/products/led-desk-lamp-usb-charging.jpg",
                     IsAvailable = false,
                     StockQuantity = 0
                 },
@@ -259,12 +259,12 @@ namespace BuckeyeMarketplaceBackend.Data
                 {
                     Id = 7,
                     Title = "Official Ohio State Buckeyes Sweatshirt",
-                    Description = "Authentic OSU maroon and gray crew neck sweatshirt. Size Medium. Worn only a few times, excellent condition.",
+                    Description = "Black Ohio State zip hoodie with front pockets and small chest logo. Casual sweatshirt for campus wear.",
                     Price = 48.00m,
                     Category = "Clothing",
                     Brand = "Nike",
                     PostedDate = new DateTime(2026, 2, 15),
-                    ImageUrl = "https://images.unsplash.com/photo-1556821552-5ff41cf988d7?w=800&auto=format&fit=crop&q=80",
+                    ImageUrl = "/assets/products/ohio-state-buckeyes-sweatshirt.jpg",
                     IsAvailable = true,
                     StockQuantity = 6
                 },
@@ -272,12 +272,12 @@ namespace BuckeyeMarketplaceBackend.Data
                 {
                     Id = 8,
                     Title = "Winter Parka Jacket - North Face Style",
-                    Description = "Waterproof insulated winter parka. Black with grey trim. Perfect for Ohio winters. Size Large. Great for dorm life.",
+                    Description = "Long insulated green winter parka with hood. Warm outerwear option for cold Ohio winters.",
                     Price = 89.99m,
                     Category = "Clothing",
                     Brand = "The North Face",
                     PostedDate = new DateTime(2026, 3, 4),
-                    ImageUrl = "https://images.unsplash.com/photo-1539533057592-4ee42f35b72e?w=800&auto=format&fit=crop&q=80",
+                    ImageUrl = "/assets/products/winter-parka-jacket-north-face-style.jpg",
                     IsAvailable = true,
                     StockQuantity = 4
                 }

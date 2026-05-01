@@ -6,6 +6,7 @@ import Button from '../components/atoms/Button';
 import CartFeedbackBanner from '../components/molecules/CartFeedbackBanner';
 import { useCart } from '../context/CartContext';
 import { useProductDetail } from '../hooks/useProductDetail';
+import { getProductFallbackImage, resolveProductImageSource } from '../utils/productImages';
 
 const ProductDetailPage: FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -49,13 +50,19 @@ const ProductDetailPage: FC = () => {
     },
     imageContainer: {
       width: '100%',
-      aspectRatio: '1',
-      backgroundColor: '#f8f8f8',
-      borderRadius: '10px',
+      aspectRatio: '4 / 5',
+      padding: 'clamp(22px, 4vw, 38px)',
+      background:
+        'radial-gradient(circle at 50% 18%, rgba(255, 255, 255, 0.96), rgba(255, 255, 255, 0) 52%), linear-gradient(145deg, #ffffff 0%, #f8f8f7 50%, #f1f2f4 100%)',
+      border: '1px solid rgba(212, 212, 216, 0.86)',
+      borderRadius: '12px',
+      boxShadow:
+        '0 18px 36px rgba(23, 23, 23, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.94), inset 0 -24px 44px rgba(23, 23, 23, 0.04)',
       overflow: 'hidden',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
+      isolation: 'isolate',
     },
     details: {
       display: 'flex',
@@ -211,6 +218,8 @@ const ProductDetailPage: FC = () => {
       day: 'numeric',
     });
   };
+  const imageUrl = resolveProductImageSource(product);
+  const fallbackImageUrl = getProductFallbackImage(product.category);
 
   return (
     <div style={styles.page}>
@@ -230,10 +239,14 @@ const ProductDetailPage: FC = () => {
         <div style={styles.content}>
           <div style={styles.imageContainer}>
             <Image
-              src={product.imageUrl}
+              src={imageUrl}
               alt={product.title}
               width="100%"
               height="100%"
+              fallbackSrc={fallbackImageUrl}
+              objectFit="contain"
+              backgroundColor="transparent"
+              mixBlendMode="multiply"
             />
           </div>
 

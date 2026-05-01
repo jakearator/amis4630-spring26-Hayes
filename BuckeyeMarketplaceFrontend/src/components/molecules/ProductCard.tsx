@@ -1,7 +1,7 @@
 import { FC } from 'react';
 import { Link } from 'react-router-dom';
 import { Product } from '../../types';
-import { getProductFallbackImage, getProductImageSource } from '../../utils/productImages';
+import { getProductFallbackImage, resolveProductImageSource } from '../../utils/productImages';
 import Image from '../atoms/Image';
 
 interface ProductCardProps {
@@ -43,7 +43,7 @@ const ProductCard: FC<ProductCardProps> = ({ product, onAddToCart, onSaveClick }
       ? 'product-card__stock product-card__stock--out'
       : 'product-card__stock';
   const fallbackImageUrl = getProductFallbackImage(product.category);
-  const imageUrl = getProductImageSource(product.imageUrl, product.category);
+  const imageUrl = resolveProductImageSource(product);
 
   return (
     <article className={`product-card${disableAddToCart ? ' product-card--unavailable' : ''}`}>
@@ -55,6 +55,9 @@ const ProductCard: FC<ProductCardProps> = ({ product, onAddToCart, onSaveClick }
             width="100%"
             height="100%"
             fallbackSrc={fallbackImageUrl}
+            objectFit="contain"
+            backgroundColor="transparent"
+            mixBlendMode="multiply"
           />
         </Link>
         <button

@@ -6,6 +6,9 @@ interface ImageProps {
   width?: string | number;
   height?: string | number;
   fallbackSrc?: string;
+  objectFit?: CSSProperties['objectFit'];
+  backgroundColor?: CSSProperties['backgroundColor'];
+  mixBlendMode?: CSSProperties['mixBlendMode'];
 }
 
 const DEFAULT_FALLBACK_SRC = '/assets/product-fallbacks/other.png';
@@ -19,6 +22,9 @@ const Image: FC<ImageProps> = ({
   width = '100%',
   height = 'auto',
   fallbackSrc = DEFAULT_FALLBACK_SRC,
+  objectFit = 'contain',
+  backgroundColor = '#fff',
+  mixBlendMode = 'normal',
 }) => {
   const resolvedSrc = src?.trim() || fallbackSrc;
 
@@ -26,11 +32,12 @@ const Image: FC<ImageProps> = ({
     image: {
       width,
       height,
-      objectFit: 'cover',
+      objectFit,
       objectPosition: 'center',
-      borderRadius: '10px',
+      borderRadius: '8px',
       display: 'block',
-      backgroundColor: '#f8f8f8',
+      backgroundColor,
+      mixBlendMode,
     },
   };
 
@@ -51,7 +58,7 @@ const Image: FC<ImageProps> = ({
         }
 
         target.src = INLINE_FALLBACK_SRC;
-        target.style.objectFit = 'cover';
+        target.style.objectFit = 'contain';
         target.style.padding = '0';
       }}
     />

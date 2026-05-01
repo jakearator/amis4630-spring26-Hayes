@@ -1,5 +1,6 @@
 import { CSSProperties, FC } from 'react';
 import { CartItem } from '../../types';
+import { getProductFallbackImage, resolveProductImageSource } from '../../utils/productImages';
 import Image from '../atoms/Image';
 
 interface CartItemRowProps {
@@ -22,9 +23,12 @@ const styles: Record<string, CSSProperties> = {
   imageWrap: {
     width: '110px',
     height: '110px',
-    backgroundColor: '#f8f8f8',
+    padding: '8px',
+    backgroundColor: '#fff',
+    border: '1px solid #e5e7eb',
     borderRadius: '8px',
     overflow: 'hidden',
+    boxShadow: 'inset 0 0 0 1px rgba(255, 255, 255, 0.8)',
   },
   info: {
     flex: 1,
@@ -100,10 +104,19 @@ const CartItemRow: FC<CartItemRowProps> = ({
   onIncreaseQuantity,
   onRemove,
 }) => {
+  const imageSrc = resolveProductImageSource(item);
+  const fallbackImageUrl = getProductFallbackImage(item.category);
+
   return (
     <div style={styles.row}>
       <div style={styles.imageWrap}>
-        <Image src={item.imageUrl} alt={item.title} width="100%" height="100%" />
+        <Image
+          src={imageSrc}
+          alt={item.title}
+          width="100%"
+          height="100%"
+          fallbackSrc={fallbackImageUrl}
+        />
       </div>
 
       <div style={styles.info}>
